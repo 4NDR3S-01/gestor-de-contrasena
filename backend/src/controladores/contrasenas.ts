@@ -497,3 +497,44 @@ export const obtenerEstadisticas = async (req: Request, res: Response): Promise<
     });
   }
 };
+
+// Obtener categorías con conteo de contraseñas
+export const obtenerCategoriasConConteo = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const usuarioId = req.usuario?.id;
+
+    if (!usuarioId) {
+      res.status(401).json({
+        exito: false,
+        mensaje: 'Usuario no autenticado'
+      });
+      return;
+    }
+
+    // Obtener estadísticas por categoría
+    const estadisticasPorCategoria = await Contrasena.aggregate([
+      { $match: { usuarioId } },
+      { $group: { _id: '$categoria', cantidad: { $sum: 1 } } },
+      { $sort: { cantidad: -1 } }
+    ]);
+
+    // Convertir a formato de objeto con categorías como keys
+    const categoriasConConteo: Record<string, number> = {};
+    estadisticasPorCategoria.forEach(item => {
+      categoriasConConteo[item._id] = item.cantidad;
+    });
+
+    res.json({
+      exito: true,
+      mensaje: 'Categorías con conteo obtenidas exitosamente',
+      datos: categoriasConConteo
+    });
+
+  } catch (error) {
+    console.error('Error al obtener categorías con conteo:', error);
+    res.status(500).json({
+      exito: false,
+      mensaje: 'Error interno del servidor'
+    });
+  }
+};

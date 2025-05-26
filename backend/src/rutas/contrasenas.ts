@@ -6,7 +6,8 @@ import {
   actualizarContrasena,
   eliminarContrasena,
   alternarFavorito,
-  obtenerEstadisticas
+  obtenerEstadisticas,
+  obtenerCategoriasConConteo
 } from '../controladores/contrasenas';
 import { verificarAutenticacion } from '../middlewares/autenticacion';
 import {
@@ -32,6 +33,13 @@ router.use(verificarAutenticacion);
  * @query   pagina - Número de página (default: 1)
  */
 router.get('/', validarBusquedaContrasenas, obtenerContrasenas);
+
+/**
+ * @route   GET /api/contrasenas/categorias
+ * @desc    Obtener categorías con conteo de contraseñas
+ * @access  Privado
+ */
+router.get('/categorias', obtenerCategoriasConConteo);
 
 /**
  * @route   GET /api/contrasenas/estadisticas
