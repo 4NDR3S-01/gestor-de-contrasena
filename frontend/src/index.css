@@ -1,31 +1,33 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Importamos las directivas básicas de Tailwind */
+@tailwind base;        /* Estilos base (reset del navegador) */
+@tailwind components;  /* Componentes reutilizables */
+@tailwind utilities;   /* Clases utilitarias de Tailwind */
 
-/* Estilos globales adicionales */
+/* Fuente principal para todo el sitio */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Glassmorphism utilities */
+/* Clase con efecto glassmorphism (fondo borroso y transparente) */
 .glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1); /* fondo blanco semitransparente */
+  backdrop-filter: blur(10px);         /* desenfoque detrás del fondo */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* borde blanco suave */
 }
 
+/* Versión más fuerte del efecto glass */
 .glass-strong {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-/* Animaciones suaves */
+/* Transiciones suaves para cualquier cambio en los elementos */
 .transition-all {
   transition: all 0.3s ease;
 }
 
-/* Custom scrollbar */
+/* Scroll personalizado (solo en navegadores basados en WebKit como Chrome o Safari) */
 ::-webkit-scrollbar {
   width: 8px;
 }
