@@ -1,19 +1,29 @@
+// Importaciones de React y librerías necesarias
 import React, { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { Bell, AlertCircle, CheckCircle, Info, X } from 'lucide-react';
+import { createPortal } from 'react-dom'; // Para renderizar el dropdown fuera del DOM principal
+import { Bell, AlertCircle, CheckCircle, Info, X } from 'lucide-react'; // Iconos
+
+// Importa el contexto personalizado de notificaciones
 import { useNotificaciones } from '../../contexts/NotificacionesContext';
 
+// Props del componente
 interface NotificationsDropdownProps {
   className?: string;
 }
 
+// Componente principal del dropdown de notificaciones
 const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className = '' }) => {
+  // Estado para mostrar u ocultar el dropdown
   const [isOpen, setIsOpen] = useState(false);
+
+  // Estado para guardar la posición dinámica del dropdown
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+
+  // Refs para los elementos del botón e interfaz del dropdown
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
-  // Usar el contexto de notificaciones reales
+
+  // Accede al contexto de notificaciones
   const {
     notificaciones,
     notificacionesNoLeidas,
@@ -22,18 +32,18 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
     eliminarNotificacion
   } = useNotificaciones();
 
-  // Calcular posición del dropdown
+  // Actualiza la posición del dropdown al abrir
   const updateDropdownPosition = () => {
     if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
+      const rect = buttonRef.current.getBoundingClientRect(); // Obtiene la posición del botón
       setDropdownPosition({
-        top: rect.bottom + 8,
-        right: window.innerWidth - rect.right
+        top: rect.bottom + 8, // Muestra el dropdown 8px debajo del botón
+        right: window.innerWidth - rect.right // Ajusta a la derecha de la pantalla
       });
     }
   };
 
-  // Cerrar dropdown al hacer click fuera
+  // Cierra el dropdown si se hace clic fuera de él
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -42,16 +52,16 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
         buttonRef.current &&
         !buttonRef.current.contains(event.target as Node)
       ) {
-        setIsOpen(false);
+        setIsOpen(false); // Cierra si se hace clic fuera
       }
     };
 
+    // Recalcula la posición si se redimensiona o desplaza la ventana
     const handleResize = () => {
-      if (isOpen) {
-        updateDropdownPosition();
-      }
+      if (isOpen) updateDropdownPosition();
     };
 
+    // Se ejecuta al abrir el dropdown
     if (isOpen) {
       updateDropdownPosition();
       document.addEventListener('mousedown', handleClickOutside);
@@ -59,6 +69,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
       window.addEventListener('scroll', handleResize);
     }
 
+    // Limpia los listeners cuando se cierra el dropdown
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       window.removeEventListener('resize', handleResize);
@@ -66,7 +77,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
     };
   }, [isOpen]);
 
-  // Función para formatear el tiempo de las notificaciones
+  // Función para mostrar el tiempo de forma amigable
   const formatTime = (fecha: Date) => {
     const now = new Date();
     const diffMs = now.getTime() - fecha.getTime();
@@ -78,6 +89,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
     return `${Math.floor(diffMins / 1440)} días`;
   };
 
+  // Devuelve el icono según el tipo de notificación
   const getIcono = (tipo: 'success' | 'warning' | 'error' | 'info') => {
     switch (tipo) {
       case 'success':
@@ -93,7 +105,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
 
   return (
     <div className={`relative ${className}`}>
-      {/* Botón de notificaciones */}
+      {/* Botón de campana con contador de notificaciones */}
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
@@ -108,7 +120,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
         )}
       </button>
 
-      {/* Dropdown usando Portal */}
+      {/* Dropdown renderizado en un portal */}
       {isOpen && typeof document !== 'undefined' && createPortal(
         <div 
           ref={dropdownRef}
@@ -119,7 +131,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
             zIndex: 99999
           }}
         >
-          {/* Header */}
+          {/* Encabezado del dropdown */}
           <div className="px-4 py-3 border-b border-gray-200/50 dark:border-gray-700/50">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -136,6 +148,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
           {/* Lista de notificaciones */}
           <div className="max-h-64 overflow-y-auto">
             {notificaciones.length === 0 ? (
+              // Estado sin notificaciones
               <div className="px-4 py-8 text-center">
                 <Bell size={32} className="mx-auto text-gray-400 mb-2" />
                 <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -143,6 +156,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
                 </p>
               </div>
             ) : (
+              // Renderiza cada notificación
               notificaciones.map((notificacion) => (
                 <div
                   key={notificacion.id}
@@ -151,12 +165,16 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
                   }`}
                 >
                   <div className="flex items-start gap-3">
+                    {/* Icono de tipo */}
                     <div className="flex-shrink-0 mt-0.5">
                       {getIcono(notificacion.tipo as 'success' | 'warning' | 'error' | 'info')}
                     </div>
+
+                    {/* Información de la notificación */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
+                          {/* Título */}
                           <p className={`text-sm font-medium ${
                             !notificacion.leida 
                               ? 'text-gray-900 dark:text-white' 
@@ -164,13 +182,19 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
                           }`}>
                             {notificacion.titulo}
                           </p>
+
+                          {/* Mensaje */}
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
                             {notificacion.mensaje}
                           </p>
+
+                          {/* Fecha formateada */}
                           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                             {formatTime(notificacion.fecha)}
                           </p>
                         </div>
+
+                        {/* Botón para eliminar notificación */}
                         <button
                           onClick={() => eliminarNotificacion(notificacion.id)}
                           className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -179,6 +203,8 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
                           <X size={14} />
                         </button>
                       </div>
+
+                      {/* Botón para marcar como leída */}
                       {!notificacion.leida && (
                         <button
                           onClick={() => marcarComoLeida(notificacion.id)}
@@ -194,7 +220,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
             )}
           </div>
 
-          {/* Footer */}
+          {/* Pie de dropdown: opción para marcar todas como leídas */}
           {notificaciones.length > 0 && (
             <div className="px-4 py-3 border-t border-gray-200/50 dark:border-gray-700/50">
               <button
@@ -206,10 +232,11 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ className
             </div>
           )}
         </div>,
-        document.body
+        document.body // El portal se monta directamente en el body del documento
       )}
     </div>
   );
 };
 
+// Exporta el componente para usarlo en el header u otras partes del layout
 export default NotificationsDropdown;

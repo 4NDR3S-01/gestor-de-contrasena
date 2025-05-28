@@ -4,19 +4,27 @@ import { apiService } from '../services/api';
 import { useAuth } from './AuthContext';
 import type { NotificacionLocal, ContextoNotificaciones, NotificacionDB } from '../types/index';
 
+// Crear contexto para las notificaciones, inicialmente indefinido
 const NotificacionesContext = createContext<ContextoNotificaciones | undefined>(undefined);
 
+// Props que recibe el provider, que es un contenedor para proveer contexto
 interface NotificacionesProviderProps {
   children: React.ReactNode;
 }
 
+// Componente provider que envuelve la aplicación y provee estado y funciones de notificaciones
 export const NotificacionesProvider: React.FC<NotificacionesProviderProps> = ({ children }) => {
+  // Obtener usuario y estado de login desde el contexto de autenticación
   const { usuario, estaLogueado } = useAuth();
+
+  // Estado local para las notificaciones cargadas
   const [notificaciones, setNotificaciones] = useState<NotificacionLocal[]>([]);
+  // Estado local para la cantidad de notificaciones no leídas
   const [notificacionesNoLeidas, setNotificacionesNoLeidas] = useState(0);
+  // Estado para indicar si está cargando notificaciones
   const [cargando, setCargando] = useState(false);
 
-  // Función para convertir notificación de BD a local
+  // Función para convertir una notificación obtenida de la base de datos a formato local para la app
   const convertirNotificacion = (notifDB: NotificacionDB): NotificacionLocal => ({
     id: notifDB._id,
     tipo: notifDB.tipo,
@@ -27,29 +35,33 @@ export const NotificacionesProvider: React.FC<NotificacionesProviderProps> = ({ 
     fecha: new Date(notifDB.fechaCreacion)
   });
 
-  // Cargar notificaciones desde la API
+  // Función para cargar notificaciones desde la API (paginación por defecto 50)
   const cargarNotificaciones = useCallback(async (pagina = 1, limite = 50) => {
+    // Si no está logueado o no hay usuario, no cargar nada
     if (!estaLogueado || !usuario) return;
 
     try {
-      setCargando(true);
+      setCargando(true); // Mostrar spinner o estado de carga
       const response = await apiService.obtenerNotificaciones(pagina, limite);
       
+      // Si la respuesta es exitosa, convertir y guardar notificaciones y cantidad no leídas
       if (response.exito && response.datos) {
         const notificacionesConvertidas = (response.datos.notificaciones as NotificacionDB[]).map(convertirNotificacion);
         setNotificaciones(notificacionesConvertidas);
         setNotificacionesNoLeidas(response.datos.noLeidas);
       }
     } catch (error) {
+      // Mostrar error en consola y notificación en UI si falla la carga
       console.error('Error al cargar notificaciones:', error);
       toast.error('Error al cargar notificaciones');
     } finally {
-      setCargando(false);
+      setCargando(false); // Quitar estado de carga
     }
   }, [estaLogueado, usuario]);
 
-  // Agregar notificación (solo localmente - la BD se actualiza vía backend)
+  // Agregar una nueva notificación solo localmente (no se envía a BD)
   const agregarNotificacion = useCallback((notificacion: Omit<NotificacionLocal, 'id' | 'fecha'>) => {
+    // Crear una notificación temporal con id único local y fecha actual
     const nuevaNotificacion: NotificacionLocal = {
       ...notificacion,
       id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -57,16 +69,17 @@ export const NotificacionesProvider: React.FC<NotificacionesProviderProps> = ({ 
       leida: false
     };
 
+    // Agregar al inicio del arreglo y aumentar contador de no leídas
     setNotificaciones(prev => [nuevaNotificacion, ...prev]);
     setNotificacionesNoLeidas(prev => prev + 1);
   }, []);
 
-  // Marcar notificación como leída
+  // Marcar una notificación como leída, actualizando backend y estado local
   const marcarComoLeida = useCallback(async (id: string) => {
     if (!estaLogueado) return;
 
     try {
-      // Si es una notificación temporal (no está en BD), solo actualizar localmente
+      // Si es notificación temporal (id local), solo actualizar localmente
       if (id.startsWith('temp_')) {
         setNotificaciones(prev =>
           prev.map(notif =>
@@ -77,9 +90,10 @@ export const NotificacionesProvider: React.FC<NotificacionesProviderProps> = ({ 
         return;
       }
 
+      // Marcar como leída en backend
       await apiService.marcarNotificacionComoLeida(id);
       
-      // Actualizar estado local
+      // Actualizar estado local reflejando el cambio
       setNotificaciones(prev =>
         prev.map(notif =>
           notif.id === id ? { ...notif, leida: true } : notif
@@ -97,9 +111,10 @@ export const NotificacionesProvider: React.FC<NotificacionesProviderProps> = ({ 
     if (!estaLogueado) return;
 
     try {
+      // Llamar a API para marcar todas como leídas
       await apiService.marcarTodasNotificacionesComoLeidas();
       
-      // Actualizar estado local
+      // Actualizar estado local para marcar todo como leído
       setNotificaciones(prev =>
         prev.map(notif => ({ ...notif, leida: true }))
       );
@@ -112,12 +127,12 @@ export const NotificacionesProvider: React.FC<NotificacionesProviderProps> = ({ 
     }
   }, [estaLogueado]);
 
-  // Eliminar notificación
+  // Eliminar notificación (temporal o permanente)
   const eliminarNotificacion = useCallback(async (id: string) => {
     if (!estaLogueado) return;
 
     try {
-      // Si es una notificación temporal, solo eliminar localmente
+      // Si es notificación temporal, eliminar localmente y ajustar contador
       if (id.startsWith('temp_')) {
         const notifEliminada = notificaciones.find(n => n.id === id);
         setNotificaciones(prev => prev.filter(notif => notif.id !== id));
@@ -128,9 +143,10 @@ export const NotificacionesProvider: React.FC<NotificacionesProviderProps> = ({ 
         return;
       }
 
+      // Eliminar notificación en backend
       await apiService.eliminarNotificacion(id);
       
-      // Actualizar estado local
+      // Actualizar estado local eliminando la notificación y actualizar contador
       const notifEliminada = notificaciones.find(n => n.id === id);
       setNotificaciones(prev => prev.filter(notif => notif.id !== id));
       
@@ -143,7 +159,7 @@ export const NotificacionesProvider: React.FC<NotificacionesProviderProps> = ({ 
     }
   }, [estaLogueado, notificaciones]);
 
-  // Función para formatear tiempo
+  // Función para formatear fechas en tiempo relativo (minutos, horas, días)
   const formatTime = useCallback((fecha: Date | string): string => {
     const fechaObj = typeof fecha === 'string' ? new Date(fecha) : fecha;
     const ahora = new Date();
@@ -161,17 +177,17 @@ export const NotificacionesProvider: React.FC<NotificacionesProviderProps> = ({ 
     return fechaObj.toLocaleDateString();
   }, []);
 
-  // Cargar notificaciones al iniciar sesión
+  // Cargar notificaciones cuando el usuario inicia sesión y limpiar cuando cierra sesión
   useEffect(() => {
     if (estaLogueado && usuario) {
       cargarNotificaciones();
     } else {
-      // Limpiar notificaciones al cerrar sesión
       setNotificaciones([]);
       setNotificacionesNoLeidas(0);
     }
   }, [estaLogueado, usuario, cargarNotificaciones]);
 
+  // Valor del contexto que será provisto a los consumidores
   const contextValue: ContextoNotificaciones = {
     notificaciones,
     notificacionesNoLeidas,
@@ -184,6 +200,7 @@ export const NotificacionesProvider: React.FC<NotificacionesProviderProps> = ({ 
     formatTime
   };
 
+  // Proveer contexto a los hijos
   return (
     <NotificacionesContext.Provider value={contextValue}>
       {children}
@@ -191,10 +208,11 @@ export const NotificacionesProvider: React.FC<NotificacionesProviderProps> = ({ 
   );
 };
 
+// Hook para consumir el contexto de notificaciones
 export const useNotificaciones = (): ContextoNotificaciones => {
   const context = useContext(NotificacionesContext);
   if (context === undefined) {
-    // Retornar un objeto vacío para evitar romper el renderizado
+    // Retornar un objeto vacío para evitar errores si se usa fuera del provider
     return {
       notificaciones: [],
       notificacionesNoLeidas: 0,

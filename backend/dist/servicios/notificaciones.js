@@ -1,4 +1,6 @@
-"use strict";
+"use strict"; // Modo estricto para evitar errores comunes
+
+// Funciones auxiliares para compatibilidad de módulos (generadas por compiladores como TypeScript)
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -32,10 +34,15 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+
+// Definición del módulo exportable
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ServicioNotificaciones = void 0;
+
+// Importa función para crear notificaciones desde el controlador correspondiente
 const notificaciones_1 = require("../controladores/notificaciones");
-// Mapeo de tipos de eventos a títulos y mensajes de notificaciones
+
+// Objeto que mapea tipos de eventos a títulos y mensajes de notificaciones personalizadas
 const NOTIFICATION_TEMPLATES = {
     PASSWORD_CREATED: {
         titulo: 'Nueva contraseña guardada',
@@ -118,23 +125,29 @@ const NOTIFICATION_TEMPLATES = {
         mensaje: () => 'La conexión con el servidor se ha restaurado'
     }
 };
+
+// Clase que maneja la lógica para crear y administrar notificaciones
 class ServicioNotificaciones {
     /**
      * Crear una notificación para un usuario específico
      */
     static async crear(usuarioId, tipo, datos) {
         try {
+            // Obtener la plantilla según tipo de notificación
             const template = NOTIFICATION_TEMPLATES[tipo];
             if (!template) {
                 console.warn(`Tipo de notificación desconocido: ${tipo}`);
                 return;
             }
+            // Preparar título y mensaje con los datos correspondientes
             const titulo = template.titulo;
             const mensaje = template.mensaje(datos);
+            // Crear notificación usando función importada
             await (0, notificaciones_1.crearNotificacion)(usuarioId, tipo, titulo, mensaje, datos);
             console.log(`Notificación creada para usuario ${usuarioId}: ${tipo}`);
         }
         catch (error) {
+            // Captura y muestra errores si falla la creación
             console.error('Error al crear notificación:', error);
         }
     }
@@ -143,6 +156,7 @@ class ServicioNotificaciones {
      */
     static async crearEnLote(usuarioId, notificaciones) {
         try {
+            // Itera y crea cada notificación individualmente
             for (const notif of notificaciones) {
                 await this.crear(usuarioId, notif.tipo, notif.datos);
             }
@@ -156,10 +170,14 @@ class ServicioNotificaciones {
      */
     static async limpiarAntiguas() {
         try {
+            // Define fecha límite para eliminar notificaciones
             const hace30Dias = new Date();
             hace30Dias.setDate(hace30Dias.getDate() - 30);
-            // Solo se pueden importar modelos dentro de funciones para evitar dependencias circulares
+
+            // Importa modelo de Notificación dentro de la función para evitar dependencias circulares
             const Notificacion = (await Promise.resolve().then(() => __importStar(require('../modelos/Notificacion')))).default;
+
+            // Elimina notificaciones leídas y con fecha de creación anterior a hace30Dias
             const resultado = await Notificacion.deleteMany({
                 fechaCreacion: { $lt: hace30Dias },
                 leida: true
@@ -171,5 +189,7 @@ class ServicioNotificaciones {
         }
     }
 }
+
+// Exporta la clase ServicioNotificaciones para ser utilizada en otros módulos
 exports.ServicioNotificaciones = ServicioNotificaciones;
 exports.default = ServicioNotificaciones;

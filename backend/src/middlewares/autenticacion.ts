@@ -1,8 +1,11 @@
+// Importación del módulo jsonwebtoken para manejar JWT
 import jwt from 'jsonwebtoken';
+// Importaciones necesarias desde Express
 import { Request, Response, NextFunction } from 'express';
+// Importación del modelo de usuario y su interfaz
 import Usuario, { IUsuario } from '../modelos/Usuario';
 
-// Extender la interfaz Request para incluir usuario
+// Extensión de la interfaz Request para incluir un campo "usuario" personalizado
 declare global {
   namespace Express {
     interface Request {
@@ -11,24 +14,25 @@ declare global {
   }
 }
 
-// Interfaz para el payload del JWT
+// Interfaz que define la estructura del payload dentro del JWT
 interface PayloadJWT {
-  id: string;
-  email: string;
-  iat: number;
-  exp: number;
+  id: string;       // ID del usuario
+  email: string;    // Email del usuario
+  iat: number;      // Fecha de emisión del token
+  exp: number;      // Fecha de expiración del token
 }
 
-// Middleware para verificar autenticación
+// Middleware que verifica si el usuario está autenticado mediante JWT
 export const verificarAutenticacion = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    // Obtener token del header Authorization
+    // Obtener el encabezado Authorization del request
     const authHeader = req.header('Authorization');
     
+    // Validar si el token está presente y tiene el formato correcto
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({
         exito: false,
@@ -37,8 +41,10 @@ export const verificarAutenticacion = async (
       return;
     }
 
-    const token = authHeader.substring(7); // Remover 'Bearer '
+    // Extraer el token eliminando el prefijo 'Bearer '
+    const token = authHeader.substring(7);
 
+    // Validar si el token está vacío
     if (!token) {
       res.status(401).json({
         exito: false,
@@ -47,17 +53,19 @@ export const verificarAutenticacion = async (
       return;
     }
 
-    // Verificar token
+    // Obtener la clave secreta desde las variables de entorno
     const secreto = process.env.JWT_SECRET;
     if (!secreto) {
       throw new Error('JWT_SECRET no está configurado');
     }
 
+    // Verificar y decodificar el token usando la clave secreta
     const decoded = jwt.verify(token, secreto) as PayloadJWT;
     
-    // Buscar usuario en la base de datos
+    // Buscar el usuario en la base de datos usando el ID del token
     const usuario = await Usuario.findById(decoded.id).select('-contrasenaHash -contrasenaMaestra');
     
+    // Validar si el usuario fue encontrado
     if (!usuario) {
       res.status(401).json({
         exito: false,
@@ -66,6 +74,7 @@ export const verificarAutenticacion = async (
       return;
     }
 
+    // Validar si la cuenta del usuario está activa
     if (!usuario.estaActivo) {
       res.status(401).json({
         exito: false,
@@ -74,15 +83,18 @@ export const verificarAutenticacion = async (
       return;
     }
 
-    // Actualizar fecha de último acceso
+    // Registrar la fecha del último acceso del usuario
     usuario.fechaUltimoAcceso = new Date();
     await usuario.save();
 
-    // Agregar usuario al request
+    // Adjuntar el usuario autenticado al objeto de la solicitud
     req.usuario = usuario;
+    
+    // Continuar con el siguiente middleware o ruta
     next();
 
   } catch (error) {
+    // Manejo de errores específicos relacionados con el token
     if (error instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         exito: false,
@@ -94,6 +106,7 @@ export const verificarAutenticacion = async (
         mensaje: 'Token inválido.'
       });
     } else {
+      // Manejo de errores generales
       console.error('Error en middleware de autenticación:', error);
       res.status(500).json({
         exito: false,

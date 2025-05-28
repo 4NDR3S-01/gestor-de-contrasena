@@ -1,25 +1,30 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+"use strict"; // Modo estricto para una mejor gestión de errores y seguridad
+Object.defineProperty(exports, "__esModule", { value: true }); // Marca este archivo como un módulo de ES
+// Exportaciones de validadores y middleware
 exports.manejarErroresValidacion = exports.validarValidarContrasena = exports.validarGenerarMultiplesContrasenas = exports.validarGenerarContrasena = exports.validarBusquedaContrasenas = exports.validarIdContrasena = exports.validarActualizarContrasena = exports.validarCrearContrasena = exports.validarRestablecerContrasena = exports.validarRecuperacionContrasena = exports.validarContrasenaMaestra = exports.validarLogin = exports.validarRegistro = void 0;
-const express_validator_1 = require("express-validator");
-// Validadores para autenticación
+
+const express_validator_1 = require("express-validator"); // Importa funciones de validación de datos
+
+// Validadores para autenticación de usuario
+
+// Validación del formulario de registro
 exports.validarRegistro = [
     (0, express_validator_1.body)('nombre')
         .trim()
-        .isLength({ min: 2, max: 50 })
+        .isLength({ min: 2, max: 50 }) // Longitud mínima y máxima del nombre
         .withMessage('El nombre debe tener entre 2 y 50 caracteres')
-        .matches(/^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/)
+        .matches(/^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/) // Solo letras y espacios
         .withMessage('El nombre solo puede contener letras y espacios'),
     (0, express_validator_1.body)('email')
         .isEmail()
         .withMessage('Debe proporcionar un email válido')
         .normalizeEmail()
-        .isLength({ max: 100 })
+        .isLength({ max: 100 }) // Longitud máxima del email
         .withMessage('El email no puede tener más de 100 caracteres'),
     (0, express_validator_1.body)('contrasena')
-        .isLength({ min: 8, max: 128 })
+        .isLength({ min: 8, max: 128 }) // Validación de longitud de contraseña
         .withMessage('La contraseña debe tener entre 8 y 128 caracteres')
-        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/) // Debe tener minúscula, mayúscula y número
         .withMessage('La contraseña debe contener al menos una minúscula, una mayúscula y un número'),
     (0, express_validator_1.body)('contrasenaMaestra')
         .isLength({ min: 8, max: 128 })
@@ -27,6 +32,8 @@ exports.validarRegistro = [
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
         .withMessage('La contraseña maestra debe contener al menos una minúscula, una mayúscula y un número')
 ];
+
+// Validación de login
 exports.validarLogin = [
     (0, express_validator_1.body)('email')
         .isEmail()
@@ -35,9 +42,11 @@ exports.validarLogin = [
     (0, express_validator_1.body)('contrasena')
         .notEmpty()
         .withMessage('La contraseña es obligatoria')
-        .isLength({ min: 1, max: 128 })
+        .isLength({ min: 1, max: 128 }) // Verifica que no esté vacía y tenga longitud válida
         .withMessage('La contraseña no puede estar vacía')
 ];
+
+// Validación de contraseña maestra
 exports.validarContrasenaMaestra = [
     (0, express_validator_1.body)('contrasenaMaestra')
         .notEmpty()
@@ -45,12 +54,16 @@ exports.validarContrasenaMaestra = [
         .isLength({ min: 1, max: 128 })
         .withMessage('La contraseña maestra no puede estar vacía')
 ];
+
+// Validación de recuperación de contraseña (solicitud de email)
 exports.validarRecuperacionContrasena = [
     (0, express_validator_1.body)('email')
         .isEmail()
         .withMessage('Debe proporcionar un email válido')
         .normalizeEmail()
 ];
+
+// Validación de restablecimiento de contraseña
 exports.validarRestablecerContrasena = [
     (0, express_validator_1.body)('token')
         .notEmpty()
@@ -63,7 +76,9 @@ exports.validarRestablecerContrasena = [
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
         .withMessage('La nueva contraseña debe contener al menos una minúscula, una mayúscula y un número')
 ];
-// Validadores para contraseñas
+
+// Validadores para creación de contraseñas
+
 exports.validarCrearContrasena = [
     (0, express_validator_1.body)('titulo')
         .trim()
@@ -108,6 +123,8 @@ exports.validarCrearContrasena = [
         .isBoolean()
         .withMessage('esFavorito debe ser un valor booleano')
 ];
+
+// Validación para actualizar contraseña
 exports.validarActualizarContrasena = [
     (0, express_validator_1.param)('id')
         .isMongoId()
@@ -121,10 +138,9 @@ exports.validarActualizarContrasena = [
         .optional()
         .trim()
         .custom((value) => {
-        if (value === '')
-            return true; // Permitir cadena vacía para limpiar URL
-        return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(value);
-    })
+            if (value === '') return true; // Permitir valor vacío
+            return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(value);
+        })
         .withMessage('La URL no es válida')
         .isLength({ max: 500 })
         .withMessage('La URL no puede tener más de 500 caracteres'),
@@ -137,10 +153,9 @@ exports.validarActualizarContrasena = [
         .optional()
         .trim()
         .custom((value) => {
-        if (value === '')
-            return true; // Permitir cadena vacía para limpiar email
-        return /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(value);
-    })
+            if (value === '') return true;
+            return /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(value);
+        })
         .withMessage('El email no es válido'),
     (0, express_validator_1.body)('contrasena')
         .optional()
@@ -160,11 +175,15 @@ exports.validarActualizarContrasena = [
         .isBoolean()
         .withMessage('esFavorito debe ser un valor booleano')
 ];
+
+// Validación de ID de contraseña
 exports.validarIdContrasena = [
     (0, express_validator_1.param)('id')
         .isMongoId()
         .withMessage('ID de contraseña inválido')
 ];
+
+// Validación de búsqueda de contraseñas
 exports.validarBusquedaContrasenas = [
     (0, express_validator_1.query)('categoria')
         .optional()
@@ -188,7 +207,8 @@ exports.validarBusquedaContrasenas = [
         .isInt({ min: 1 })
         .withMessage('La página debe ser un número mayor a 0')
 ];
-// Validadores para utilidades
+
+// Validadores para generación de contraseñas
 exports.validarGenerarContrasena = [
     (0, express_validator_1.body)('longitud')
         .optional()
@@ -215,13 +235,17 @@ exports.validarGenerarContrasena = [
         .isBoolean()
         .withMessage('excluirCaracteresAmbiguos debe ser un valor booleano')
 ];
+
+// Validación para generación de múltiples contraseñas
 exports.validarGenerarMultiplesContrasenas = [
     (0, express_validator_1.body)('cantidad')
         .optional()
         .isInt({ min: 1, max: 20 })
         .withMessage('La cantidad debe estar entre 1 y 20'),
-    ...exports.validarGenerarContrasena
+    ...exports.validarGenerarContrasena // Reutiliza las validaciones de una contraseña
 ];
+
+// Validación para verificar una contraseña individual
 exports.validarValidarContrasena = [
     (0, express_validator_1.body)('contrasena')
         .isLength({ min: 1, max: 256 })
@@ -229,7 +253,8 @@ exports.validarValidarContrasena = [
         .notEmpty()
         .withMessage('La contraseña es obligatoria')
 ];
-// Middleware para manejar errores de validación de express-validator
+
+// Middleware para manejar errores de validación
 const manejarErroresValidacion = (req, res, next) => {
     const errores = (0, express_validator_1.validationResult)(req);
     if (!errores.isEmpty()) {
@@ -240,6 +265,6 @@ const manejarErroresValidacion = (req, res, next) => {
         });
         return;
     }
-    next();
+    next(); // Continúa si no hay errores
 };
 exports.manejarErroresValidacion = manejarErroresValidacion;

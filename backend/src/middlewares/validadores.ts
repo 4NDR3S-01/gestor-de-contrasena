@@ -1,8 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { body, param, query, validationResult} from 'express-validator';
+import { body, param, query, validationResult } from 'express-validator';
 
-// Validadores para autenticación
+//                      VALIDADORES PARA AUTENTICACIÓN 
+
+// Validación al momento del registro de usuario
 export const validarRegistro = [
+  // Nombre: letras y espacios, entre 2 y 50 caracteres
   body('nombre')
     .trim()
     .isLength({ min: 2, max: 50 })
@@ -10,6 +13,7 @@ export const validarRegistro = [
     .matches(/^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/)
     .withMessage('El nombre solo puede contener letras y espacios'),
 
+  // Email válido, máximo 100 caracteres
   body('email')
     .isEmail()
     .withMessage('Debe proporcionar un email válido')
@@ -17,12 +21,14 @@ export const validarRegistro = [
     .isLength({ max: 100 })
     .withMessage('El email no puede tener más de 100 caracteres'),
 
+  // Contraseña: segura (mayúscula, minúscula, número), entre 8 y 128
   body('contrasena')
     .isLength({ min: 8, max: 128 })
     .withMessage('La contraseña debe tener entre 8 y 128 caracteres')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
     .withMessage('La contraseña debe contener al menos una minúscula, una mayúscula y un número'),
 
+  // Contraseña maestra: misma lógica de validación que la anterior
   body('contrasenaMaestra')
     .isLength({ min: 8, max: 128 })
     .withMessage('La contraseña maestra debe tener entre 8 y 128 caracteres')
@@ -30,6 +36,7 @@ export const validarRegistro = [
     .withMessage('La contraseña maestra debe contener al menos una minúscula, una mayúscula y un número')
 ];
 
+// Validación para login (inicio de sesión)
 export const validarLogin = [
   body('email')
     .isEmail()
@@ -43,6 +50,7 @@ export const validarLogin = [
     .withMessage('La contraseña no puede estar vacía')
 ];
 
+// Validación para uso de la contraseña maestra
 export const validarContrasenaMaestra = [
   body('contrasenaMaestra')
     .notEmpty()
@@ -51,6 +59,7 @@ export const validarContrasenaMaestra = [
     .withMessage('La contraseña maestra no puede estar vacía')
 ];
 
+// Validación para recuperar contraseña (por email)
 export const validarRecuperacionContrasena = [
   body('email')
     .isEmail()
@@ -58,6 +67,7 @@ export const validarRecuperacionContrasena = [
     .normalizeEmail()
 ];
 
+// Validación para restablecer contraseña con token
 export const validarRestablecerContrasena = [
   body('token')
     .notEmpty()
@@ -72,6 +82,7 @@ export const validarRestablecerContrasena = [
     .withMessage('La nueva contraseña debe contener al menos una minúscula, una mayúscula y un número')
 ];
 
+// Validación para cambiar la contraseña maestra
 export const validarCambiarContrasenaMaestra = [
   body('contrasenaActual')
     .notEmpty()
@@ -86,7 +97,9 @@ export const validarCambiarContrasenaMaestra = [
     .withMessage('La nueva contraseña maestra debe contener al menos una minúscula, una mayúscula y un número')
 ];
 
-// Validadores para contraseñas
+//                                 VALIDADORES PARA CONTRASEÑAS GUARDADAS 
+
+// Validar creación de nueva contraseña guardada
 export const validarCrearContrasena = [
   body('titulo')
     .trim()
@@ -106,7 +119,7 @@ export const validarCrearContrasena = [
   body('usuario')
     .optional()
     .trim()
-    .isLength({max: 100 })
+    .isLength({ max: 100 })
     .withMessage('El usuario debe tener entre 1 y 100 caracteres'),
 
   body('email')
@@ -139,6 +152,7 @@ export const validarCrearContrasena = [
     .withMessage('esFavorito debe ser un valor booleano')
 ];
 
+// Validar actualización de contraseña guardada
 export const validarActualizarContrasena = [
   param('id')
     .isMongoId()
@@ -154,7 +168,7 @@ export const validarActualizarContrasena = [
     .optional()
     .trim()
     .custom((value) => {
-      if (value === '') return true; // Permitir cadena vacía para limpiar URL
+      if (value === '') return true;
       return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(value);
     })
     .withMessage('La URL no es válida')
@@ -171,7 +185,7 @@ export const validarActualizarContrasena = [
     .optional()
     .trim()
     .custom((value) => {
-      if (value === '') return true; // Permitir cadena vacía para limpiar email
+      if (value === '') return true;
       return /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(value);
     })
     .withMessage('El email no es válido'),
@@ -198,12 +212,14 @@ export const validarActualizarContrasena = [
     .withMessage('esFavorito debe ser un valor booleano')
 ];
 
+// Validación para obtener una contraseña por su ID
 export const validarIdContrasena = [
   param('id')
     .isMongoId()
     .withMessage('ID de contraseña inválido')
 ];
 
+// Validación para búsquedas con filtros (categoría, búsqueda por texto, favoritos, paginación)
 export const validarBusquedaContrasenas = [
   query('categoria')
     .optional()
@@ -232,7 +248,9 @@ export const validarBusquedaContrasenas = [
     .withMessage('La página debe ser un número mayor a 0')
 ];
 
-// Validadores para utilidades
+//                               VALIDADORES PARA UTILIDADES 
+
+// Validación para generación de contraseñas seguras
 export const validarGenerarContrasena = [
   body('longitud')
     .optional()
@@ -265,6 +283,7 @@ export const validarGenerarContrasena = [
     .withMessage('excluirCaracteresAmbiguos debe ser un valor booleano')
 ];
 
+// Generación de múltiples contraseñas reutilizando validaciones anteriores
 export const validarGenerarMultiplesContrasenas = [
   body('cantidad')
     .optional()
@@ -274,6 +293,7 @@ export const validarGenerarMultiplesContrasenas = [
   ...validarGenerarContrasena
 ];
 
+// Validación de fortaleza de contraseña ingresada por el usuario
 export const validarValidarContrasena = [
   body('contrasena')
     .isLength({ min: 1, max: 256 })
@@ -282,7 +302,9 @@ export const validarValidarContrasena = [
     .withMessage('La contraseña es obligatoria')
 ];
 
-// Middleware para manejar errores de validación de express-validator
+//                               MIDDLEWARE PARA MANEJO DE ERRORES 
+
+// Middleware para manejar errores generados por express-validator
 export const manejarErroresValidacion = (req: Request, res: Response, next: NextFunction) => {
   const errores = validationResult(req);
   if (!errores.isEmpty()) {
@@ -293,5 +315,5 @@ export const manejarErroresValidacion = (req: Request, res: Response, next: Next
     });
     return;
   }
-  next();
+  next(); // Si no hay errores, continúa con la siguiente función
 };
