@@ -68,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({ abierto, onCerrar }) => {
           <div className="flex items-center gap-3">
             <Shield className="w-9 h-9 text-blue-600 dark:text-blue-400 drop-shadow-lg" />
             <span className="text-2xl font-extrabold bg-gradient-to-r from-blue-700 via-purple-600 to-indigo-500 bg-clip-text text-transparent tracking-tight select-none">
-              Boveda virtual
+              Boveda
             </span>
           </div>
           {/* Botón cerrar sidebar móvil */}
