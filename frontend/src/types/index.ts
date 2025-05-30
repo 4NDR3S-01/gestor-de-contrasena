@@ -46,7 +46,7 @@ export interface Contrasena {
 }
 
 export interface DatosContrasena {
-  sitio: string;
+  titulo: string;
   usuario: string;
   contrasena: string;
   notas?: string;
@@ -56,7 +56,7 @@ export interface DatosContrasena {
 
 // Para compatibilidad con el formulario
 export interface CrearContrasenaData {
-  sitio: string;
+  titulo: string;
   usuario?: string;
   email?: string;
   url?: string;

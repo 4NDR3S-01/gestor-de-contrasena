@@ -153,12 +153,12 @@ const Favorites: React.FC = () => {
       setEditingPassword(password);
       setFormData({
         sitio: password.titulo || '',
-        usuario: password.usuario || '',
-        email: password.email || '',
-        url: password.url || '',
+        usuario: password.usuario ?? '',
+        email: password.email ?? '',
+        url: password.url ?? '',
         contrasena: '',
         categoria: password.categoria,
-        notas: password.notas || '',
+        notas: password.notas ?? '',
         esFavorito: password.esFavorito
       });
     } else {
@@ -204,7 +204,7 @@ const Favorites: React.FC = () => {
     try {
       if (editingPassword) {
         const dataToSend: Partial<CrearContrasenaData> = {
-          sitio: formData.sitio.trim(),
+          titulo: formData.sitio.trim(),
           usuario: formData.usuario || undefined,
           email: formData.email || undefined,  
           url: formData.url || undefined,
@@ -228,7 +228,7 @@ const Favorites: React.FC = () => {
         }
       } else {
         const dataToSend: CrearContrasenaData = {
-          sitio: formData.sitio.trim(),
+          titulo: formData.sitio.trim(),
           usuario: formData.usuario || undefined,
           email: formData.email || undefined,  
           url: formData.url || undefined,

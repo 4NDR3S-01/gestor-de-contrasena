@@ -102,13 +102,13 @@ const Passwords: React.FC = () => {
     if (password) {
       setEditingPassword(password);
       setFormData({
-        sitio: password.titulo || '',
-        usuario: password.usuario || '',
-        email: password.email || '',
-        url: password.url || '',
+        sitio: password.titulo ?? '',
+        usuario: password.usuario ?? '',
+        email: password.email ?? '',
+        url: password.url ?? '',
         contrasena: '',
         categoria: password.categoria,
-        notas: password.notas || '',
+        notas: password.notas ?? '',
         esFavorito: password.esFavorito
       });
     } else {
@@ -143,13 +143,69 @@ const Passwords: React.FC = () => {
     });
   };
 
+  // Extrae la lógica de actualización de contraseña
+  const actualizarContrasena = async () => {
+    if (!editingPassword) return;
+    const dataToSend: Partial<CrearContrasenaData> = {
+      titulo: formData.sitio.trim(),
+      usuario: formData.usuario || undefined,
+      email: formData.email || undefined,  
+      url: formData.url || undefined,
+      notas: formData.notas || undefined,
+      categoria: formData.categoria.toLowerCase().replace(/\s+/g, '_'),
+      esFavorito: formData.esFavorito
+    };
+    if (formData.contrasena.trim()) {
+      dataToSend.contrasena = formData.contrasena.trim();
+    }
+    console.log('Actualizando contraseña ID:', editingPassword._id);
+    console.log('DataToSend actualización:', dataToSend);
+    const respuesta = await apiService.actualizarContrasena(editingPassword._id, dataToSend);
+    console.log('Respuesta actualización:', respuesta);
+    if (respuesta.exito) {
+      toast.success('Contraseña actualizada exitosamente');
+      await cargarContrasenas();
+      cerrarModal();
+    } else {
+      console.error('Error en respuesta:', respuesta);
+      toast.error(respuesta.mensaje || 'Error al actualizar la contraseña');
+    }
+  };
+
+  // Extrae la lógica de creación de contraseña
+  const crearContrasena = async () => {
+    const dataToSend: CrearContrasenaData = {
+      titulo: formData.sitio.trim(),
+      usuario: formData.usuario || undefined,
+      email: formData.email || undefined,  
+      url: formData.url || undefined,
+      contrasena: formData.contrasena.trim(),
+      notas: formData.notas || undefined,
+      categoria: formData.categoria.toLowerCase().replace(/\s+/g, '_'),
+      esFavorito: formData.esFavorito
+    };
+    console.log('Creando nueva contraseña');
+    console.log('DataToSend creación:', dataToSend);
+    const respuesta = await apiService.crearContrasena(dataToSend);
+    console.log('Respuesta creación:', respuesta);
+    if (respuesta.exito) {
+      toast.success('Contraseña creada exitosamente');
+      await cargarContrasenas();
+      cerrarModal();
+    } else {
+      console.error('Error en respuesta:', respuesta);
+      toast.error(respuesta.mensaje || 'Error al crear la contraseña');
+    }
+  };
+
+  // Maneja el submit del formulario
   const manejarSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     console.log('=== INICIO SUBMIT ===');
     console.log('FormData:', formData);
     console.log('EditingPassword:', editingPassword);
-    
+
     // Validación básica frontend
     if (!formData.sitio.trim() || (!editingPassword && !formData.contrasena.trim())) {
       toast.error('El título y la contraseña son obligatorios');
@@ -158,67 +214,15 @@ const Passwords: React.FC = () => {
 
     try {
       if (editingPassword) {
-        // Para actualización, usar Partial<CrearContrasenaData>
-        const dataToSend: Partial<CrearContrasenaData> = {
-          sitio: formData.sitio.trim(),
-          usuario: formData.usuario || undefined,
-          email: formData.email || undefined,  
-          url: formData.url || undefined,
-          notas: formData.notas || undefined,
-          categoria: formData.categoria.toLowerCase().replace(/\s+/g, '_'),
-          esFavorito: formData.esFavorito
-        };
-
-        // Solo incluir contraseña si se modificó
-        if (formData.contrasena.trim()) {
-          dataToSend.contrasena = formData.contrasena.trim();
-        }
-        
-        console.log('Actualizando contraseña ID:', editingPassword._id);
-        console.log('DataToSend actualización:', dataToSend);
-        const respuesta = await apiService.actualizarContrasena(editingPassword._id, dataToSend);
-        console.log('Respuesta actualización:', respuesta);
-        
-        if (respuesta.exito) {
-          toast.success('Contraseña actualizada exitosamente');
-          await cargarContrasenas();
-          cerrarModal();
-        } else {
-          console.error('Error en respuesta:', respuesta);
-          toast.error(respuesta.mensaje || 'Error al actualizar la contraseña');
-        }
+        await actualizarContrasena();
       } else {
-        // Para creación, usar CrearContrasenaData completo
-        const dataToSend: CrearContrasenaData = {
-          sitio: formData.sitio.trim(),
-          usuario: formData.usuario || undefined,
-          email: formData.email || undefined,  
-          url: formData.url || undefined,
-          contrasena: formData.contrasena.trim(), // Requerido para creación
-          notas: formData.notas || undefined,
-          categoria: formData.categoria.toLowerCase().replace(/\s+/g, '_'),
-          esFavorito: formData.esFavorito
-        };
-
-        console.log('Creando nueva contraseña');
-        console.log('DataToSend creación:', dataToSend);
-        const respuesta = await apiService.crearContrasena(dataToSend);
-        console.log('Respuesta creación:', respuesta);
-        
-        if (respuesta.exito) {
-          toast.success('Contraseña creada exitosamente');
-          await cargarContrasenas();
-          cerrarModal();
-        } else {
-          console.error('Error en respuesta:', respuesta);
-          toast.error(respuesta.mensaje || 'Error al crear la contraseña');
-        }
+        await crearContrasena();
       }
     } catch (error: unknown) {
       console.error('Error completo en submit:', error);
-      
+
       let mensaje = 'Error al procesar la contraseña';
-      
+
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { data?: { errores?: Array<{ msg?: string; message?: string }>; mensaje?: string } } };
         if (axiosError.response?.data?.errores && Array.isArray(axiosError.response.data.errores)) {
@@ -230,7 +234,7 @@ const Passwords: React.FC = () => {
       } else if (error instanceof Error) {
         mensaje = error.message;
       }
-      
+
       toast.error(mensaje);
     }
   };
