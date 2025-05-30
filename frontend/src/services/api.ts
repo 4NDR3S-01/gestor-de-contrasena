@@ -130,14 +130,14 @@ class ServicioAPI {
   async crearContrasena(datos: CrearContrasenaData): Promise<RespuestaAPI<{ contrasena: Contrasena }>> {
     const response: AxiosResponse<RespuestaAPI<{ contrasena: Contrasena }>> = await this.api.post('/contrasenas', datos);
     // Emitir evento de sincronización al crear contraseña con datos específicos
-    syncEvents.emit(SYNC_EVENTS.PASSWORD_CREATED, { sitio: datos.sitio });
+    syncEvents.emit(SYNC_EVENTS.PASSWORD_CREATED, { sitio: datos.titulo });
     return response.data;
   }
 
   async actualizarContrasena(id: string, datos: Partial<CrearContrasenaData>): Promise<RespuestaAPI<{ contrasena: Contrasena }>> {
     const response: AxiosResponse<RespuestaAPI<{ contrasena: Contrasena }>> = await this.api.put(`/contrasenas/${id}`, datos);
     // Emitir evento de sincronización al actualizar contraseña con datos específicos
-    syncEvents.emit(SYNC_EVENTS.PASSWORD_UPDATED, { sitio: datos.sitio });
+    syncEvents.emit(SYNC_EVENTS.PASSWORD_UPDATED, { sitio: datos.titulo });
     return response.data;
   }
 

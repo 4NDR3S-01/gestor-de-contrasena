@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { 
+import {
   Key, 
   Heart, 
   Shield, 
@@ -12,20 +12,13 @@ import {
   CreditCard,
   Star,
   Zap,
-  TrendingUp,
-  Activity,
-  BarChart3,
-  Wifi,
-  WifiOff,
-  RefreshCw,
-  Settings,
-  Download,
   Bell,
   ChevronRight,
   Eye,
   EyeOff
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotificaciones } from '../contexts/NotificacionesContext';
 import apiService from '../services/api';
 import { toast } from 'react-hot-toast';
 import '../styles/Dashboard.css';
@@ -47,15 +40,9 @@ interface ContrasenaReciente {
   esFavorito: boolean;
 }
 
-interface EstadisticasAvanzadas {
-  usoReciente: number;
-  conexionEstado: boolean;
-  ultmaSincronizacion: string;
-  categoriasPopulares: Array<{ categoria: string; cantidad: number }>;
-}
-
 const Dashboard: React.FC = () => {
   const { usuario } = useAuth();
+  const { notificaciones, notificacionesNoLeidas, marcarComoLeida, eliminarNotificacion, formatTime } = useNotificaciones();
   const [estadisticas, setEstadisticas] = useState<Estadisticas>({
     totalContrasenas: 0,
     favoritos: 0,
@@ -66,19 +53,12 @@ const Dashboard: React.FC = () => {
   const [contrasenasRecientes, setContrasenasRecientes] = useState<ContrasenaReciente[]>([]);
   const [cargandoEstadisticas, setCargandoEstadisticas] = useState(true);
   const [cargandoRecientes, setCargandoRecientes] = useState(true);
-  const [estadisticasAvanzadas, setEstadisticasAvanzadas] = useState<EstadisticasAvanzadas>({
-    usoReciente: 0,
-    conexionEstado: true,
-    ultmaSincronizacion: new Date().toISOString(),
-    categoriasPopulares: []
-  });
   const [mostrarConsejoSeguridad, setMostrarConsejoSeguridad] = useState(true);
 
   const cargarDatosDashboard = useCallback(async () => {
     await Promise.all([
       cargarEstadisticas(),
-      cargarContrasenasRecientes(),
-      cargarEstadisticasAvanzadas()
+      cargarContrasenasRecientes()
     ]);
   }, []);
 
@@ -110,15 +90,14 @@ const Dashboard: React.FC = () => {
           favoritos?: number;
           recientes?: Array<{ length?: number }>;
         };
-        
-        // Extraer estadísticas más completas
+        // Solo datos reales, sin estimaciones ni simulaciones
         const estadisticasCompletas: Estadisticas = {
-          totalContrasenas: datos.resumen?.totalContrasenas || datos.totalContrasenas || 0,
-          favoritos: datos.resumen?.totalFavoritos || datos.favoritos || 0,
-          contrasenasDebiles: Math.floor((datos.resumen?.totalContrasenas || 0) * 0.2), // Estimación
-          contrasenasRecientes: datos.recientes?.length || 0,
-          categorias: datos.resumen?.categorias || 0,
-          puntuacionSeguridad: Math.floor(Math.random() * 40) + 60 // Simulado por ahora
+          totalContrasenas: datos.resumen?.totalContrasenas ?? datos.totalContrasenas ?? 0,
+          favoritos: datos.resumen?.totalFavoritos ?? datos.favoritos ?? 0,
+          contrasenasDebiles: 0, // No mostrar, no hay dato real
+          contrasenasRecientes: datos.recientes?.length ?? 0,
+          categorias: datos.resumen?.categorias,
+          puntuacionSeguridad: undefined // No mostrar, no hay dato real
         };
         
         setEstadisticas(estadisticasCompletas);
@@ -128,28 +107,6 @@ const Dashboard: React.FC = () => {
       toast.error('Error al cargar las estadísticas');
     } finally {
       setCargandoEstadisticas(false);
-    }
-  };
-
-  const cargarEstadisticasAvanzadas = async () => {
-    try {
-      // Simular datos avanzados por ahora
-      const categoriasRespuesta = await apiService.obtenerCategoriasConConteo();
-      const categoriasPopulares = categoriasRespuesta.exito 
-        ? Object.entries(categoriasRespuesta.datos || {}).map(([categoria, cantidad]) => ({
-            categoria: categoria.replace('_', ' ').charAt(0).toUpperCase() + categoria.slice(1),
-            cantidad: cantidad as number
-          })).slice(0, 3)
-        : [];
-
-      setEstadisticasAvanzadas({
-        usoReciente: Math.floor(Math.random() * 20) + 5,
-        conexionEstado: navigator.onLine,
-        ultmaSincronizacion: new Date().toISOString(),
-        categoriasPopulares
-      });
-    } catch (error) {
-      console.error('Error al cargar estadísticas avanzadas:', error);
     }
   };
 
@@ -189,70 +146,36 @@ const Dashboard: React.FC = () => {
     return iconos[categoria] || iconos.otros;
   };
 
-  const CirculoProgreso: React.FC<{ porcentaje: number; color: string }> = ({ porcentaje, color }) => {
-    const radius = 35;
-    const circumference = 2 * Math.PI * radius;
-    const strokeDasharray = circumference;
-    const strokeDashoffset = circumference - (porcentaje / 100) * circumference;
-
-    return (
-      <div className="security-score-circle">
-        <svg width="80" height="80" className="absolute inset-0">
-          <circle
-            cx="40"
-            cy="40"
-            r={radius}
-            stroke="currentColor"
-            strokeWidth="8"
-            fill="none"
-            className="text-gray-200 dark:text-gray-700"
-          />
-          <circle
-            cx="40"
-            cy="40"
-            r={radius}
-            stroke={color}
-            strokeWidth="8"
-            fill="none"
-            strokeDasharray={strokeDasharray}
-            strokeDashoffset={strokeDashoffset}
-            className="progress-circle transition-all duration-1000 ease-out"
-            strokeLinecap="round"
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-lg font-bold text-gray-900 dark:text-white">
-            {porcentaje}%
-          </span>
-        </div>
-      </div>
-    );
-  };
 
   const obtenerConsejoSeguridad = () => {
     const consejos = [
       {
-        titulo: "Actualiza contraseñas antiguas",
-        mensaje: `Tu puntuación de seguridad es del ${estadisticas.puntuacionSeguridad}%. Considera actualizar las contraseñas que no has cambiado en más de 90 días.`,
+        titulo: "Guarda tus contraseñas aquí",
+        mensaje: "Almacena todas tus contraseñas importantes en un solo lugar seguro. Así no dependerás de la memoria ni de notas inseguras.",
         acciones: [
-          { texto: "Revisar débiles", enlace: "/passwords?filter=weak", icono: AlertTriangle, color: "blue" },
-          { texto: "Generar segura", enlace: "/generator", icono: Zap, color: "green" }
+          { texto: "Agregar contraseña", enlace: "/passwords", icono: Plus, color: "emerald" },
+          { texto: "Generar contraseña segura", enlace: "/generator", icono: Zap, color: "purple" }
         ]
       },
       {
-        titulo: "Activa 2FA donde sea posible",
-        mensaje: "La autenticación de dos factores añade una capa extra de seguridad a tus cuentas más importantes.",
+        titulo: "Accede rápido a tus favoritas",
+        mensaje: "Marca como favoritas las contraseñas que usas con más frecuencia para encontrarlas fácilmente en la sección de favoritos.",
         acciones: [
-          { texto: "Ver favoritos", enlace: "/favorites", icono: Heart, color: "red" },
-          { texto: "Configurar", enlace: "/profile", icono: Settings, color: "purple" }
+          { texto: "Ver favoritos", enlace: "/favorites", icono: Heart, color: "red" }
         ]
       },
       {
-        titulo: "Revisa tus categorías",
-        mensaje: `Tienes ${estadisticas.categorias || 0} categorías activas. Organizar bien tus contraseñas te ayuda a mantenerlas actualizadas.`,
+        titulo: "Organiza y busca fácilmente",
+        mensaje: "Utiliza las categorías y el buscador para mantener tus contraseñas ordenadas y encontrarlas rápidamente cuando las necesites.",
         acciones: [
-          { texto: "Ver todas", enlace: "/passwords", icono: BarChart3, color: "indigo" },
-          { texto: "Organizar", enlace: "/passwords?sort=category", icono: Monitor, color: "blue" }
+          { texto: "Ver todas", enlace: "/passwords", icono: ChevronRight, color: "indigo" }
+        ]
+      },
+      {
+        titulo: "Mantén tu información actualizada",
+        mensaje: "Actualiza tus contraseñas periódicamente y elimina las que ya no usas para mantener tu bóveda limpia y segura.",
+        acciones: [
+          { texto: "Gestionar contraseñas", enlace: "/passwords", icono: Key, color: "blue" }
         ]
       }
     ];
@@ -264,50 +187,27 @@ const Dashboard: React.FC = () => {
   // Si en el futuro quieres mostrar fortaleza, puedes implementar aquí
   // const obtenerColorFortaleza = (fortaleza: string) => { ... };
 
+  // Tarjetas de estadísticas solo con datos reales
   const tarjetasEstadisticas = [
     {
       titulo: 'Total de Contraseñas',
-      valor: estadisticas.totalContrasenas,
-      icono: <Key className="h-8 w-8" />,
+      valor: cargandoEstadisticas ? '' : (estadisticas.totalContrasenas > 0 ? estadisticas.totalContrasenas : 'No disponible'),
+      icono: <Key className="h-8 w-8" />, 
       color: 'from-blue-500 to-blue-600',
       textColor: 'text-blue-600',
       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
       enlace: '/passwords',
-      descripcion: 'Contraseñas almacenadas',
-      cambio: '+3 esta semana'
+      descripcion: 'Contraseñas almacenadas'
     },
     {
       titulo: 'Favoritos',
-      valor: estadisticas.favoritos,
-      icono: <Heart className="h-8 w-8" />,
+      valor: cargandoEstadisticas ? '' : (estadisticas.favoritos > 0 ? estadisticas.favoritos : 'No disponible'),
+      icono: <Heart className="h-8 w-8" />, 
       color: 'from-red-500 to-red-600',
       textColor: 'text-red-600',
       bgColor: 'bg-red-50 dark:bg-red-900/20',
       enlace: '/favorites',
-      descripcion: 'Marcadas como favoritas',
-      cambio: '+1 este mes'
-    },
-    {
-      titulo: 'Puntuación de Seguridad',
-      valor: `${estadisticas.puntuacionSeguridad || 0}%`,
-      icono: <Shield className="h-8 w-8" />,
-      color: 'from-emerald-500 to-emerald-600',
-      textColor: 'text-emerald-600',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
-      enlace: '/passwords?filter=security',
-      descripcion: 'Nivel de seguridad',
-      cambio: '+5% este mes'
-    },
-    {
-      titulo: 'Uso Reciente',
-      valor: estadisticasAvanzadas.usoReciente,
-      icono: <Activity className="h-8 w-8" />,
-      color: 'from-purple-500 to-purple-600',
-      textColor: 'text-purple-600',
-      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
-      enlace: '/passwords?sort=recent',
-      descripcion: 'Accesos hoy',
-      cambio: 'Tiempo real'
+      descripcion: 'Marcadas como favoritas'
     }
   ];
 
@@ -325,20 +225,6 @@ const Dashboard: React.FC = () => {
       icono: <Zap className="h-6 w-6" />,
       color: 'from-purple-500 to-purple-600',
       enlace: '/generator'
-    },
-    {
-      titulo: 'Análisis de Seguridad',
-      descripcion: 'Revisar contraseñas débiles',
-      icono: <Shield className="h-6 w-6" />,
-      color: 'from-orange-500 to-orange-600',
-      enlace: '/passwords?filter=security'
-    },
-    {
-      titulo: 'Exportar Datos',
-      descripcion: 'Descargar respaldo',
-      icono: <Download className="h-6 w-6" />,
-      color: 'from-indigo-500 to-indigo-600',
-      enlace: '/profile'
     }
   ];
 
@@ -385,43 +271,28 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Tarjetas de Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 stats-grid">
+        <div className="stats-grid mb-8">
           {tarjetasEstadisticas.map((tarjeta, index) => (
             <Link
               key={tarjeta.titulo}
               to={tarjeta.enlace}
               className="group relative overflow-hidden bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border border-white/20 dark:border-gray-700/50 card-hover glass-effect"
               style={{ animationDelay: `${index * 100}ms` }}
-            >                <div className="flex items-start justify-between">
+            >
+              <div className="flex items-start justify-between">
                 <div className={`p-3 rounded-xl ${tarjeta.bgColor} group-hover:scale-110 transition-transform duration-200`}>
                   <div className={tarjeta.textColor}>
                     {tarjeta.icono}
                   </div>
                 </div>
                 <div className="text-right">
-                  {tarjeta.titulo === 'Puntuación de Seguridad' ? (
-                    <div className="flex items-center justify-end space-x-3">
-                      <CirculoProgreso 
-                        porcentaje={estadisticas.puntuacionSeguridad || 0} 
-                        color="#10b981" 
-                      />
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                        {cargandoEstadisticas ? (
-                          <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-12 rounded"></div>
-                        ) : (
-                          tarjeta.valor
-                        )}
-                      </p>
-                      {tarjeta.cambio && (
-                        <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
-                          {tarjeta.cambio}
-                        </p>
-                      )}
-                    </>
-                  )}
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {cargandoEstadisticas ? (
+                      <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-12 rounded"></div>
+                    ) : (
+                      tarjeta.valor
+                    )}
+                  </p>
                 </div>
               </div>
               <div className="mt-4">
@@ -432,7 +303,6 @@ const Dashboard: React.FC = () => {
                   {tarjeta.descripcion}
                 </p>
               </div>
-              {/* Gradiente decorativo */}
               <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${tarjeta.color} opacity-70`}></div>
             </Link>
           ))}
@@ -445,84 +315,10 @@ const Dashboard: React.FC = () => {
           )}
         </div>
 
-        {/* Estado del Sistema */}
-        <div className="mb-8">
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/50 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-                <Activity className="h-6 w-6 mr-3 text-green-600" />
-                Estado del Sistema
-              </h2>
-              <button
-                onClick={cargarDatosDashboard}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                title="Actualizar datos"
-              >
-                <RefreshCw className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-lg ${estadisticasAvanzadas.conexionEstado ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
-                  {estadisticasAvanzadas.conexionEstado ? (
-                    <Wifi className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <WifiOff className="h-5 w-5 text-red-600" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Conexión</p>
-                  <p className={`text-xs ${estadisticasAvanzadas.conexionEstado ? 'text-green-600' : 'text-red-600'}`}>
-                    {estadisticasAvanzadas.conexionEstado ? 'Conectado' : 'Sin conexión'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Última Sync</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {new Date(estadisticasAvanzadas.ultmaSincronizacion).toLocaleTimeString('es-ES', { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                  <BarChart3 className="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Categorías</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {estadisticas.categorias || estadisticasAvanzadas.categoriasPopulares.length} activas
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
-                  <TrendingUp className="h-5 w-5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Tendencia</p>
-                  <p className="text-xs text-green-600">+5% este mes</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Contenido Principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="dashboard-main-grid">
           {/* Contraseñas Recientes */}
-          <div className="lg:col-span-2">
+          <div className="dashboard-section">
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/50 overflow-hidden">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
@@ -616,7 +412,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Panel lateral */}
-          <div className="space-y-6">
+          <div className="dashboard-sidebar">
             {/* Notificaciones Recientes */}
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/50">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -626,59 +422,41 @@ const Dashboard: React.FC = () => {
                     Notificaciones
                   </h2>
                   <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full">
-                    3
+                    {notificacionesNoLeidas > 0 ? notificacionesNoLeidas : 0}
                   </span>
                 </div>
               </div>
-
               <div className="p-6">
-                <div className="space-y-3">
-                  <div className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        Contraseña débil detectada
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        La contraseña de Facebook necesita ser actualizada
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        Hace 2 horas
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {notificaciones.length === 0 ? (
+                    <div className="px-4 py-8 text-center">
+                      <Bell size={32} className="mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        No tienes notificaciones
                       </p>
                     </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        Nueva contraseña creada
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        Se agregó una contraseña para Gmail
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        Hace 1 día
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        Backup completado
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        Respaldo semanal guardado exitosamente
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        Hace 2 días
-                      </p>
-                    </div>
-                  </div>
+                  ) : (
+                    notificaciones.slice(0, 5).map((notificacion) => (
+                      <div
+                        key={notificacion.id}
+                        className={`flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${!notificacion.leida ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                      >
+                        <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: notificacion.leida ? '#a3a3a3' : '#2563eb' }}></div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium ${!notificacion.leida ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>{notificacion.titulo}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{notificacion.mensaje}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">{formatTime(notificacion.fecha)}</p>
+                          <div className="flex gap-2 mt-1">
+                            {!notificacion.leida && (
+                              <button onClick={() => marcarComoLeida(notificacion.id)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Marcar como leída</button>
+                            )}
+                            <button onClick={() => eliminarNotificacion(notificacion.id)} className="text-xs text-red-500 hover:underline">Eliminar</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-
                 <Link
                   to="/notifications"
                   className="block text-center mt-4 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
@@ -722,44 +500,6 @@ const Dashboard: React.FC = () => {
                     </Link>
                   ))}
                 </div>
-              </div>
-            </div>
-
-            {/* Categorías Populares */}
-            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/50">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-                  <BarChart3 className="h-6 w-6 mr-3 text-indigo-600" />
-                  Categorías Populares
-                </h2>
-              </div>
-
-              <div className="p-6">
-                {estadisticasAvanzadas.categoriasPopulares.length > 0 ? (
-                  <div className="space-y-3">
-                    {estadisticasAvanzadas.categoriasPopulares.map((cat, index) => (
-                      <div key={cat.categoria} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-2 h-2 rounded-full ${
-                            index === 0 ? 'bg-blue-500' : 
-                            index === 1 ? 'bg-green-500' : 'bg-purple-500'
-                          }`}></div>
-                          <span className="font-medium text-gray-900 dark:text-white capitalize">
-                            {cat.categoria}
-                          </span>
-                        </div>
-                        <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-                          {cat.cantidad}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">No hay datos disponibles</p>
-                  </div>
-                )}
               </div>
             </div>
 
