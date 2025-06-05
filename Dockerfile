@@ -24,8 +24,8 @@ WORKDIR /app/backend
 # Copia solo los archivos de dependencias primero para aprovechar el cache
 COPY backend/package*.json ./
 
-# Instala las dependencias de producción
-RUN npm install --omit=dev
+# Instala las dependencias de desarrollo y producción para el backend
+RUN npm install
 
 # Copia el resto del código fuente del backend
 COPY backend/. .
