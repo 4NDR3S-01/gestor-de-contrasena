@@ -6,6 +6,7 @@ import * as yup from 'yup';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
+import { QRCodeCanvas } from 'qrcode.react';
 
 // Esquemas de validación
 const esquemaInformacionPersonal = yup.object({
@@ -186,6 +187,15 @@ const Profile: React.FC = () => {
       minute: '2-digit',
     });
   };
+
+  // Icono de descarga
+  function DownloadIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+      <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+      </svg>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900 transition-colors duration-300">
@@ -493,6 +503,40 @@ const Profile: React.FC = () => {
                       </p>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sección moderna de descarga de app móvil */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-100/80 via-white/90 to-blue-100/80 dark:from-green-900/60 dark:via-gray-900/80 dark:to-blue-900/60 rounded-3xl -z-10" />
+              <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-green-200/50 dark:border-green-700/50 p-8 flex flex-col items-center">
+                <div className="flex flex-col items-center gap-2 mb-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-green-400 to-blue-500 dark:from-green-700 dark:to-blue-800 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Key className="w-7 h-7 text-white drop-shadow" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white text-center">Acceso móvil</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-center text-sm max-w-xs">Escanea el código QR para abrir la app en tu móvil o descarga la app oficial para Android.</p>
+                </div>
+                <div className="flex flex-col items-center gap-4 w-full">
+                  <QRCodeCanvas value={window.location.origin + '/mi-app.apk'} size={120} className="border-2 border-green-200 dark:border-green-700 rounded-xl bg-white dark:bg-gray-900 p-2 shadow" />
+                  <a
+                    href="/mi-app.apk"
+                    download
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 shadow-lg mb-1 mt-2 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
+                  >
+                    <DownloadIcon className="w-5 h-5" />
+                    Descargar APK Android
+                  </a>
+                  <a
+                    href="https://play.google.com/store/apps/#"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                  >
+                    <DownloadIcon className="w-5 h-5" />
+                    Descargar desde Google Play
+                  </a>
                 </div>
               </div>
             </div>
