@@ -7,8 +7,8 @@ WORKDIR /app/frontend
 # Copia solo los archivos de dependencias primero para aprovechar el cache
 COPY frontend/package*.json ./
 
-# Instala las dependencias de producción
-RUN npm install --omit=dev
+# Instala las dependencias de desarrollo y producción para el frontend
+RUN npm install
 
 # Copia el resto del código fuente del frontend
 COPY frontend/. .
