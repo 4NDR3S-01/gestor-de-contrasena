@@ -33,7 +33,7 @@ export const verificarAutenticacion = async (
     const authHeader = req.header('Authorization');
     
     // Validar si el token está presente y tiene el formato correcto
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader?.startsWith('Bearer ')) {
       res.status(401).json({
         exito: false,
         mensaje: 'Acceso denegado. Token no proporcionado.'

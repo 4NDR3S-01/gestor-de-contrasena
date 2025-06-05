@@ -535,3 +535,63 @@ export const cambiarContrasenaMaestra = async (req: Request, res: Response): Pro
     });
   }
 };
+
+// Cambiar contraseña de la cuenta (no la maestra)
+export const cambiarContrasenaCuenta = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const errores = validationResult(req);
+    if (!errores.isEmpty()) {
+      res.status(400).json({
+        exito: false,
+        mensaje: 'Datos de entrada inválidos',
+        errores: errores.array()
+      });
+      return;
+    }
+
+    const usuarioId = req.usuario?.id;
+    const { contrasenaActual, nuevaContrasena } = req.body;
+
+    if (!usuarioId) {
+      res.status(401).json({
+        exito: false,
+        mensaje: 'Usuario no autenticado'
+      });
+      return;
+    }
+
+    const usuario = await Usuario.findById(usuarioId);
+    if (!usuario) {
+      res.status(404).json({
+        exito: false,
+        mensaje: 'Usuario no encontrado'
+      });
+      return;
+    }
+
+    // Verificar la contraseña actual
+    const contrasenaActualValida = await usuario.compararContrasena(contrasenaActual);
+    if (!contrasenaActualValida) {
+      res.status(400).json({
+        exito: false,
+        mensaje: 'La contraseña actual es incorrecta'
+      });
+      return;
+    }
+
+    // Actualizar la contraseña de la cuenta
+    usuario.contrasenaHash = nuevaContrasena;
+    await usuario.save();
+
+    res.json({
+      exito: true,
+      mensaje: 'Contraseña de la cuenta cambiada exitosamente'
+    });
+  } catch (error) {
+    console.error('Error al cambiar contraseña de la cuenta:', error);
+    res.status(500).json({
+      exito: false,
+      mensaje: 'Error interno del servidor'
+    });
+  }
+};

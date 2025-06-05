@@ -39,12 +39,35 @@ const esquemaCambiarContrasena = yup.object({
     .required('Confirma la nueva contraseña'),
 });
 
+// Esquema para cambiar la contraseña de la cuenta (no la maestra)
+const esquemaCambiarContrasenaCuenta = yup.object({
+  contrasenaActual: yup.string().required('La contraseña actual es obligatoria'),
+  nuevaContrasena: yup
+    .string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
+    .matches(/[a-z]/, 'Debe contener al menos una letra minúscula')
+    .matches(/[A-Z]/, 'Debe contener al menos una letra mayúscula')
+    .matches(/\d/, 'Debe contener al menos un número')
+    .matches(/[^a-zA-Z0-9]/, 'Debe contener al menos un carácter especial')
+    .required('La nueva contraseña es obligatoria'),
+  confirmarContrasena: yup
+    .string()
+    .oneOf([yup.ref('nuevaContrasena')], 'Las contraseñas no coinciden')
+    .required('Confirma la nueva contraseña'),
+});
+
 interface DatosInformacionPersonal {
   nombre: string;
   email: string;
 }
 
 interface DatosCambiarContrasena {
+  contrasenaActual: string;
+  nuevaContrasena: string;
+  confirmarContrasena: string;
+}
+
+interface DatosCambiarContrasenaCuenta {
   contrasenaActual: string;
   nuevaContrasena: string;
   confirmarContrasena: string;
@@ -84,6 +107,16 @@ const Profile: React.FC = () => {
     reset: resetContrasena,
   } = useForm<DatosCambiarContrasena>({
     resolver: yupResolver(esquemaCambiarContrasena),
+  });
+
+  // Formulario de cambiar contraseña de la cuenta
+  const {
+    register: registerCuenta,
+    handleSubmit: handleSubmitCuenta,
+    formState: { errors: errorsCuenta },
+    reset: resetCuenta,
+  } = useForm<DatosCambiarContrasenaCuenta>({
+    resolver: yupResolver(esquemaCambiarContrasenaCuenta),
   });
 
   useEffect(() => {
@@ -174,6 +207,26 @@ const Profile: React.FC = () => {
       toast.error('Error al cambiar la contraseña maestra');
     } finally {
       setCargandoContrasena(false);
+    }
+  };
+
+  const cambiarContrasenaCuenta = async (datos: DatosCambiarContrasenaCuenta) => {
+    try {
+      setCargandoInfo(true);
+      const respuesta = await apiService.cambiarContrasenaCuenta({
+        contrasenaActual: datos.contrasenaActual,
+        nuevaContrasena: datos.nuevaContrasena,
+      });
+      if (respuesta.exito) {
+        toast.success('Contraseña de cuenta cambiada correctamente');
+        resetCuenta();
+      } else {
+        toast.error(respuesta.mensaje || 'Error al cambiar la contraseña de la cuenta');
+      }
+    } catch {
+      toast.error('Error al cambiar la contraseña de la cuenta');
+    } finally {
+      setCargandoInfo(false);
     }
   };
 
@@ -403,6 +456,72 @@ const Profile: React.FC = () => {
                 </form>
               </div>
             </div>
+
+            {/* Formulario de cambio de contraseña de la cuenta */}
+            <form onSubmit={handleSubmitCuenta(cambiarContrasenaCuenta)} className="space-y-6 mt-8">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                <Lock className="w-5 h-5 text-blue-500" /> Cambiar contraseña de la cuenta
+              </h3>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Contraseña actual
+                </label>
+                <input
+                  {...registerCuenta('contrasenaActual')}
+                  type="password"
+                  className={`w-full px-4 py-3 border rounded-xl bg-white/80 dark:bg-gray-800/80 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errorsCuenta.contrasenaActual ? 'border-red-300 dark:border-red-600' : 'border-gray-200 dark:border-gray-700'}`}
+                  placeholder="Tu contraseña actual"
+                />
+                {errorsCuenta.contrasenaActual && (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errorsCuenta.contrasenaActual.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nueva contraseña
+                </label>
+                <input
+                  {...registerCuenta('nuevaContrasena')}
+                  type="password"
+                  className={`w-full px-4 py-3 border rounded-xl bg-white/80 dark:bg-gray-800/80 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errorsCuenta.nuevaContrasena ? 'border-red-300 dark:border-red-600' : 'border-gray-200 dark:border-gray-700'}`}
+                  placeholder="Tu nueva contraseña segura"
+                />
+                {errorsCuenta.nuevaContrasena && (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errorsCuenta.nuevaContrasena.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Confirmar nueva contraseña
+                </label>
+                <input
+                  {...registerCuenta('confirmarContrasena')}
+                  type="password"
+                  className={`w-full px-4 py-3 border rounded-xl bg-white/80 dark:bg-gray-800/80 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errorsCuenta.confirmarContrasena ? 'border-red-300 dark:border-red-600' : 'border-gray-200 dark:border-gray-700'}`}
+                  placeholder="Confirma tu nueva contraseña"
+                />
+                {errorsCuenta.confirmarContrasena && (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errorsCuenta.confirmarContrasena.message}
+                  </p>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={cargandoInfo}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 disabled:from-blue-400 disabled:to-emerald-400 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 shadow-lg"
+              >
+                <Lock className="w-5 h-5" />
+                {cargandoInfo ? 'Cambiando...' : 'Cambiar Contraseña'}
+              </button>
+            </form>
           </div>
 
           {/* Panel Lateral */}

@@ -40,7 +40,7 @@ class ServicioAPI {
       (response) => response,
       (error) => {
         const status = error.response?.status;
-        const url = error.config?.url || '';
+        const url = error.config?.url ?? '';
         // Solo forzar logout/redirección si NO es login ni registro
         if (
           status === 401 &&
@@ -86,6 +86,11 @@ class ServicioAPI {
 
   async cambiarContrasenaMaestra(datos: { contrasenaActual: string; nuevaContrasena: string }): Promise<RespuestaAPI> {
     const response: AxiosResponse<RespuestaAPI> = await this.api.put('/auth/cambiar-contrasena-maestra', datos);
+    return response.data;
+  }
+
+  async cambiarContrasenaCuenta(datos: { contrasenaActual: string; nuevaContrasena: string }): Promise<RespuestaAPI> {
+    const response: AxiosResponse<RespuestaAPI> = await this.api.put('/auth/cambiar-contrasena-cuenta', datos);
     return response.data;
   }
 

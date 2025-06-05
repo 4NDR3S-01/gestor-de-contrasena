@@ -97,6 +97,21 @@ export const validarCambiarContrasenaMaestra = [
     .withMessage('La nueva contraseña maestra debe contener al menos una minúscula, una mayúscula y un número')
 ];
 
+// Validación para cambiar la contraseña de la cuenta (no la maestra)
+export const validarCambiarContrasenaCuenta = [
+  body('contrasenaActual')
+    .notEmpty()
+    .withMessage('La contraseña actual es obligatoria')
+    .isLength({ min: 1, max: 128 })
+    .withMessage('La contraseña actual no puede estar vacía'),
+
+  body('nuevaContrasena')
+    .isLength({ min: 8, max: 128 })
+    .withMessage('La nueva contraseña debe tener entre 8 y 128 caracteres')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage('La nueva contraseña debe contener al menos una minúscula, una mayúscula y un número')
+];
+
 //                                 VALIDADORES PARA CONTRASEÑAS GUARDADAS 
 
 // Validar creación de nueva contraseña guardada
@@ -169,7 +184,7 @@ export const validarActualizarContrasena = [
     .trim()
     .custom((value) => {
       if (value === '') return true;
-      return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(value);
+      return /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]+)*\/?$/.test(value);
     })
     .withMessage('La URL no es válida')
     .isLength({ max: 500 })
@@ -240,7 +255,7 @@ export const validarBusquedaContrasenas = [
   query('limite')
     .optional()
     .isInt({ min: 1, max: 100 })
-    .withMessage('El límite debe ser un número entre 1 y 100'),
+    .withMessage('El límite debe estar entre 1 y 100'),
 
   query('pagina')
     .optional()
@@ -304,16 +319,27 @@ export const validarValidarContrasena = [
 
 //                               MIDDLEWARE PARA MANEJO DE ERRORES 
 
-// Middleware para manejar errores generados por express-validator
-export const manejarErroresValidacion = (req: Request, res: Response, next: NextFunction) => {
+/**
+ * Middleware para manejar errores de validación de express-validator
+ * Debe usarse después de las validaciones en las rutas
+ * Si encuentra errores, responde con status 400 y detalle de errores
+ * Si no hay errores, continúa al siguiente middleware
+ */
+export const manejarErroresValidacion = (req: Request, res: Response, next: NextFunction): void => {
   const errores = validationResult(req);
+  
   if (!errores.isEmpty()) {
     res.status(400).json({
       exito: false,
-      mensaje: 'Datos de entrada inválidos',
-      errores: errores.array()
+      mensaje: 'Errores de validación en los datos enviados',
+      errores: errores.array().map(error => ({
+        campo: error.type === 'field' ? error.path : 'unknown',
+        mensaje: error.msg,
+        valorRecibido: error.type === 'field' ? error.value : undefined
+      }))
     });
     return;
   }
-  next(); // Si no hay errores, continúa con la siguiente función
+  
+  next();
 };

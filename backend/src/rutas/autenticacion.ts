@@ -9,7 +9,8 @@ import {
   obtenerPerfil,
   cerrarSesion,
   actualizarPerfil,
-  cambiarContrasenaMaestra
+  cambiarContrasenaMaestra,
+  cambiarContrasenaCuenta
 } from '../controladores/autenticacion';
 import { verificarAutenticacion } from '../middlewares/autenticacion';
 import {
@@ -19,6 +20,7 @@ import {
   validarRecuperacionContrasena,
   validarRestablecerContrasena,
   validarCambiarContrasenaMaestra,
+  validarCambiarContrasenaCuenta,
   manejarErroresValidacion
 } from '../middlewares/validadores';
 
@@ -117,5 +119,12 @@ router.put('/perfil', verificarAutenticacion, actualizarPerfil);
  * @access  Privado
  */
 router.put('/cambiar-contrasena-maestra', verificarAutenticacion, validarCambiarContrasenaMaestra, manejarErroresValidacion, cambiarContrasenaMaestra);
+
+/**
+ * @route   PUT /api/auth/cambiar-contrasena-cuenta
+ * @desc    Cambiar contraseña de la cuenta (no la maestra)
+ * @access  Privado
+ */
+router.put('/cambiar-contrasena-cuenta', verificarAutenticacion, validarCambiarContrasenaCuenta, manejarErroresValidacion, cambiarContrasenaCuenta);
 
 export default router;
