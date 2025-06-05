@@ -91,4 +91,10 @@ router.put('/perfil', autenticacion_2.verificarAutenticacion, autenticacion_1.ac
  * @access  Privado
  */
 router.put('/cambiar-contrasena-maestra', autenticacion_2.verificarAutenticacion, validadores_1.validarCambiarContrasenaMaestra, validadores_1.manejarErroresValidacion, autenticacion_1.cambiarContrasenaMaestra);
+/**
+ * @route   PUT /api/auth/cambiar-contrasena-cuenta
+ * @desc    Cambiar contraseña de la cuenta (no la maestra)
+ * @access  Privado
+ */
+router.put('/cambiar-contrasena-cuenta', autenticacion_2.verificarAutenticacion, validadores_1.validarCambiarContrasenaCuenta, validadores_1.manejarErroresValidacion, autenticacion_1.cambiarContrasenaCuenta);
 exports.default = router;

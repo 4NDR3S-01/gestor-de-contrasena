@@ -349,6 +349,100 @@ const Profile: React.FC = () => {
                     {cargandoInfo ? 'Guardando...' : 'Guardar Cambios'}
                   </button>
                 </form>
+
+                {/* Separador */}
+                <div className="my-8 border-t border-gray-200 dark:border-gray-700"></div>
+
+                {/* Formulario de cambio de contraseña de la cuenta */}
+                <div className="space-y-6">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Lock className="w-6 h-6 text-blue-500" /> 
+                    Cambiar Contraseña de la Cuenta
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                    Esta es la contraseña que usas para acceder a tu cuenta (diferente a la contraseña maestra).
+                  </p>
+
+                  <form onSubmit={handleSubmitCuenta(cambiarContrasenaCuenta)} className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Contraseña actual de la cuenta
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input
+                          {...registerCuenta('contrasenaActual')}
+                          type="password"
+                          className={`w-full pl-10 pr-4 py-3 border rounded-xl bg-white/80 dark:bg-gray-800/80 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                            errorsCuenta.contrasenaActual ? 'border-red-300 dark:border-red-600' : 'border-gray-200 dark:border-gray-700'
+                          }`}
+                          placeholder="Tu contraseña actual de la cuenta"
+                        />
+                      </div>
+                      {errorsCuenta.contrasenaActual && (
+                        <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {errorsCuenta.contrasenaActual.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nueva contraseña de la cuenta
+                      </label>
+                      <div className="relative">
+                        <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input
+                          {...registerCuenta('nuevaContrasena')}
+                          type="password"
+                          className={`w-full pl-10 pr-4 py-3 border rounded-xl bg-white/80 dark:bg-gray-800/80 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                            errorsCuenta.nuevaContrasena ? 'border-red-300 dark:border-red-600' : 'border-gray-200 dark:border-gray-700'
+                          }`}
+                          placeholder="Tu nueva contraseña segura de la cuenta"
+                        />
+                      </div>
+                      {errorsCuenta.nuevaContrasena && (
+                        <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {errorsCuenta.nuevaContrasena.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Confirmar nueva contraseña de la cuenta
+                      </label>
+                      <div className="relative">
+                        <CheckCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input
+                          {...registerCuenta('confirmarContrasena')}
+                          type="password"
+                          className={`w-full pl-10 pr-4 py-3 border rounded-xl bg-white/80 dark:bg-gray-800/80 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                            errorsCuenta.confirmarContrasena ? 'border-red-300 dark:border-red-600' : 'border-gray-200 dark:border-gray-700'
+                          }`}
+                          placeholder="Confirma tu nueva contraseña de la cuenta"
+                        />
+                      </div>
+                      {errorsCuenta.confirmarContrasena && (
+                        <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {errorsCuenta.confirmarContrasena.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={cargandoInfo}
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 disabled:from-blue-400 disabled:to-emerald-400 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 shadow-lg"
+                    >
+                      <Lock className="w-5 h-5" />
+                      {cargandoInfo ? 'Cambiando...' : 'Cambiar Contraseña de la Cuenta'}
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
 

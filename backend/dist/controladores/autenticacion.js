@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cambiarContrasenaMaestra = exports.actualizarPerfil = exports.cerrarSesion = exports.obtenerPerfil = exports.restablecerContrasena = exports.solicitarRecuperacionContrasena = exports.verificarContrasenaMaestra = exports.iniciarSesion = exports.registrarUsuario = void 0;
+exports.cambiarContrasenaCuenta = exports.cambiarContrasenaMaestra = exports.actualizarPerfil = exports.cerrarSesion = exports.obtenerPerfil = exports.restablecerContrasena = exports.solicitarRecuperacionContrasena = exports.verificarContrasenaMaestra = exports.iniciarSesion = exports.registrarUsuario = void 0;
 const express_validator_1 = require("express-validator");
 const Usuario_1 = __importDefault(require("../modelos/Usuario"));
 const seguridad_1 = require("../utilidades/seguridad");
@@ -477,3 +477,58 @@ const cambiarContrasenaMaestra = async (req, res) => {
     }
 };
 exports.cambiarContrasenaMaestra = cambiarContrasenaMaestra;
+// Cambiar contraseña de la cuenta (no la maestra)
+const cambiarContrasenaCuenta = async (req, res) => {
+    try {
+        const errores = (0, express_validator_1.validationResult)(req);
+        if (!errores.isEmpty()) {
+            res.status(400).json({
+                exito: false,
+                mensaje: 'Datos de entrada inválidos',
+                errores: errores.array()
+            });
+            return;
+        }
+        const usuarioId = req.usuario?.id;
+        const { contrasenaActual, nuevaContrasena } = req.body;
+        if (!usuarioId) {
+            res.status(401).json({
+                exito: false,
+                mensaje: 'Usuario no autenticado'
+            });
+            return;
+        }
+        const usuario = await Usuario_1.default.findById(usuarioId);
+        if (!usuario) {
+            res.status(404).json({
+                exito: false,
+                mensaje: 'Usuario no encontrado'
+            });
+            return;
+        }
+        // Verificar la contraseña actual
+        const contrasenaActualValida = await usuario.compararContrasena(contrasenaActual);
+        if (!contrasenaActualValida) {
+            res.status(400).json({
+                exito: false,
+                mensaje: 'La contraseña actual es incorrecta'
+            });
+            return;
+        }
+        // Actualizar la contraseña de la cuenta
+        usuario.contrasenaHash = nuevaContrasena;
+        await usuario.save();
+        res.json({
+            exito: true,
+            mensaje: 'Contraseña de la cuenta cambiada exitosamente'
+        });
+    }
+    catch (error) {
+        console.error('Error al cambiar contraseña de la cuenta:', error);
+        res.status(500).json({
+            exito: false,
+            mensaje: 'Error interno del servidor'
+        });
+    }
+};
+exports.cambiarContrasenaCuenta = cambiarContrasenaCuenta;

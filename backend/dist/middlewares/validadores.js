@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.manejarErroresValidacion = exports.validarValidarContrasena = exports.validarGenerarMultiplesContrasenas = exports.validarGenerarContrasena = exports.validarBusquedaContrasenas = exports.validarIdContrasena = exports.validarActualizarContrasena = exports.validarCrearContrasena = exports.validarCambiarContrasenaMaestra = exports.validarRestablecerContrasena = exports.validarRecuperacionContrasena = exports.validarContrasenaMaestra = exports.validarLogin = exports.validarRegistro = void 0;
+exports.manejarErroresValidacion = exports.validarValidarContrasena = exports.validarGenerarMultiplesContrasenas = exports.validarGenerarContrasena = exports.validarBusquedaContrasenas = exports.validarIdContrasena = exports.validarActualizarContrasena = exports.validarCrearContrasena = exports.validarCambiarContrasenaCuenta = exports.validarCambiarContrasenaMaestra = exports.validarRestablecerContrasena = exports.validarRecuperacionContrasena = exports.validarContrasenaMaestra = exports.validarLogin = exports.validarRegistro = void 0;
 const express_validator_1 = require("express-validator");
 //                      VALIDADORES PARA AUTENTICACIÓN 
 // Validación al momento del registro de usuario
@@ -85,6 +85,19 @@ exports.validarCambiarContrasenaMaestra = [
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
         .withMessage('La nueva contraseña maestra debe contener al menos una minúscula, una mayúscula y un número')
 ];
+// Validación para cambiar la contraseña de la cuenta (no la maestra)
+exports.validarCambiarContrasenaCuenta = [
+    (0, express_validator_1.body)('contrasenaActual')
+        .notEmpty()
+        .withMessage('La contraseña actual es obligatoria')
+        .isLength({ min: 1, max: 128 })
+        .withMessage('La contraseña actual no puede estar vacía'),
+    (0, express_validator_1.body)('nuevaContrasena')
+        .isLength({ min: 8, max: 128 })
+        .withMessage('La nueva contraseña debe tener entre 8 y 128 caracteres')
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+        .withMessage('La nueva contraseña debe contener al menos una minúscula, una mayúscula y un número')
+];
 //                                 VALIDADORES PARA CONTRASEÑAS GUARDADAS 
 // Validar creación de nueva contraseña guardada
 exports.validarCrearContrasena = [
@@ -147,7 +160,7 @@ exports.validarActualizarContrasena = [
         .custom((value) => {
         if (value === '')
             return true;
-        return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(value);
+        return /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]+)*\/?$/.test(value);
     })
         .withMessage('La URL no es válida')
         .isLength({ max: 500 })
@@ -208,7 +221,7 @@ exports.validarBusquedaContrasenas = [
     (0, express_validator_1.query)('limite')
         .optional()
         .isInt({ min: 1, max: 100 })
-        .withMessage('El límite debe ser un número entre 1 y 100'),
+        .withMessage('El límite debe estar entre 1 y 100'),
     (0, express_validator_1.query)('pagina')
         .optional()
         .isInt({ min: 1 })
@@ -259,17 +272,26 @@ exports.validarValidarContrasena = [
         .withMessage('La contraseña es obligatoria')
 ];
 //                               MIDDLEWARE PARA MANEJO DE ERRORES 
-// Middleware para manejar errores generados por express-validator
+/**
+ * Middleware para manejar errores de validación de express-validator
+ * Debe usarse después de las validaciones en las rutas
+ * Si encuentra errores, responde con status 400 y detalle de errores
+ * Si no hay errores, continúa al siguiente middleware
+ */
 const manejarErroresValidacion = (req, res, next) => {
     const errores = (0, express_validator_1.validationResult)(req);
     if (!errores.isEmpty()) {
         res.status(400).json({
             exito: false,
-            mensaje: 'Datos de entrada inválidos',
-            errores: errores.array()
+            mensaje: 'Errores de validación en los datos enviados',
+            errores: errores.array().map(error => ({
+                campo: error.type === 'field' ? error.path : 'unknown',
+                mensaje: error.msg,
+                valorRecibido: error.type === 'field' ? error.value : undefined
+            }))
         });
         return;
     }
-    next(); // Si no hay errores, continúa con la siguiente función
+    next();
 };
 exports.manejarErroresValidacion = manejarErroresValidacion;
