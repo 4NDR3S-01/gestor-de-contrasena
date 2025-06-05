@@ -79,8 +79,6 @@ const Profile: React.FC = () => {
   const [cargandoContrasena, setCargandoContrasena] = useState(false);
   const [estadisticas, setEstadisticas] = useState({
     totalContrasenas: 0,
-    contrasenasFuertes: 0,
-    contrasenasDebiles: 0,
     favoritas: 0,
     ultimoAcceso: null as string | null,
   });
@@ -136,14 +134,8 @@ const Profile: React.FC = () => {
       const totalContrasenas = contrasenas.length;
       const favoritas = contrasenas.filter((p) => p.esFavorito).length;
       
-      // Calcular fortaleza de contraseñas (simulado para ahora, podría implementarse en el backend)
-      const contrasenasFuertes = Math.floor(totalContrasenas * 0.7);
-      const contrasenasDebiles = totalContrasenas - contrasenasFuertes;
-      
       setEstadisticas({
         totalContrasenas,
-        contrasenasFuertes,
-        contrasenasDebiles,
         favoritas,
         ultimoAcceso: new Date().toISOString(),
       });
@@ -152,8 +144,6 @@ const Profile: React.FC = () => {
       // Fallback a datos vacíos en caso de error
       setEstadisticas({
         totalContrasenas: 0,
-        contrasenasFuertes: 0,
-        contrasenasDebiles: 0,
         favoritas: 0,
         ultimoAcceso: new Date().toISOString(),
       });
@@ -543,26 +533,6 @@ const Profile: React.FC = () => {
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total contraseñas</span>
                     </div>
                     <span className="font-bold text-blue-600 dark:text-blue-400">{estadisticas.totalContrasenas}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50/80 to-green-100/80 dark:from-green-900/40 dark:to-green-800/40 rounded-xl border border-green-100 dark:border-green-800">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-green-100 dark:bg-green-800/50 rounded-lg flex items-center justify-center">
-                        <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      </div>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Contraseñas fuertes</span>
-                    </div>
-                    <span className="font-bold text-green-600 dark:text-green-400">{estadisticas.contrasenasFuertes}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-red-50/80 to-red-100/80 dark:from-red-900/40 dark:to-red-800/40 rounded-xl border border-red-100 dark:border-red-800">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-red-100 dark:bg-red-800/50 rounded-lg flex items-center justify-center">
-                        <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      </div>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Contraseñas débiles</span>
-                    </div>
-                    <span className="font-bold text-red-600 dark:text-red-400">{estadisticas.contrasenasDebiles}</span>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50/80 to-yellow-100/80 dark:from-yellow-900/40 dark:to-yellow-800/40 rounded-xl border border-yellow-100 dark:border-yellow-800">
