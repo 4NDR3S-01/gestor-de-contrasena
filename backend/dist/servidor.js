@@ -10,11 +10,13 @@ const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const baseDatos_1 = require("./configuracion/baseDatos");
 const rutas_1 = __importDefault(require("./rutas"));
+const path_1 = __importDefault(require("path"));
 // Configurar variables de entorno
 dotenv_1.default.config();
 // Crear aplicación Express
 const app = (0, express_1.default)();
-const PUERTO = process.env.PORT ?? 8080;
+app.set('trust proxy', 1);
+const PUERTO = process.env.PORT ?? 5000;
 // Conectar a la base de datos
 (0, baseDatos_1.conectarBaseDatos)();
 // Configuración de seguridad
@@ -32,7 +34,7 @@ app.use((0, helmet_1.default)({
 // Configuración de CORS
 app.use((0, cors_1.default)({
     origin: process.env.NODE_ENV === 'production'
-        ? ['https://gestor-de-contrasena-670185495291.europe-west1.run.app']
+        ? ['https://delightful-mushroom-09d443d1e.6.azurestaticapps.net']
         : ['https://delightful-mushroom-09d443d1e.6.azurestaticapps.net', 'http://localhost:5173'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
@@ -62,6 +64,12 @@ const limitadorAutenticacion = (0, express_rate_limit_1.default)({
 app.use(limitadorGeneral);
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
+// Servir archivos estáticos del frontend
+app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
+// Ruta fallback para SPA: servir index.html para cualquier ruta no API
+app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path_1.default.join(__dirname, '../public/index.html'));
+});
 // Rutas de salud y estado
 app.get('/api/salud', (req, res) => {
     res.json({

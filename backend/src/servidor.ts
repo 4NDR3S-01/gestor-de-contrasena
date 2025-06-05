@@ -12,6 +12,7 @@ dotenv.config();
 
 // Crear aplicación Express
 const app = express();
+app.set('trust proxy', 1);
 const PUERTO = process.env.PORT ?? 5000;
 
 // Conectar a la base de datos
@@ -34,7 +35,7 @@ app.use(helmet({
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://delightful-mushroom-09d443d1e.6.azurestaticapps.net'] 
-    : ['https://delightful-mushroom-09d443d1e.6.azurestaticapps.net', 'http://localhost:5173'],
+    : ['https://delightful-mushroom-09d443d1e.6.azurestaticapps.net', 'https://gestor-de-contrasena-670185495291.europe-west1.run.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
