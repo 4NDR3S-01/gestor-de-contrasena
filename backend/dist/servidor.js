@@ -35,7 +35,7 @@ app.use((0, helmet_1.default)({
 app.use((0, cors_1.default)({
     origin: process.env.NODE_ENV === 'production'
         ? ['https://delightful-mushroom-09d443d1e.6.azurestaticapps.net']
-        : ['https://delightful-mushroom-09d443d1e.6.azurestaticapps.net', 'http://localhost:5173'],
+        : ['https://delightful-mushroom-09d443d1e.6.azurestaticapps.net', 'https://gestor-de-contrasena-670185495291.europe-west1.run.app'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
