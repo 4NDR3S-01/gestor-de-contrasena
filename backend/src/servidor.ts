@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { conectarBaseDatos } from './configuracion/baseDatos';
 import rutasAPI from './rutas';
+import path from 'path';
 
 // Configurar variables de entorno
 dotenv.config();
@@ -65,6 +66,14 @@ const limitadorAutenticacion = rateLimit({
 app.use(limitadorGeneral);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Servir archivos estáticos del frontend
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Ruta fallback para SPA: servir index.html para cualquier ruta no API
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
 
 // Rutas de salud y estado
 app.get('/api/salud', (req: Request, res: Response) => {
