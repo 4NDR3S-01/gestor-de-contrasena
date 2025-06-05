@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cerrarSesion = exports.obtenerPerfil = exports.restablecerContrasena = exports.solicitarRecuperacionContrasena = exports.verificarContrasenaMaestra = exports.iniciarSesion = exports.registrarUsuario = void 0;
+exports.cambiarContrasenaMaestra = exports.actualizarPerfil = exports.cerrarSesion = exports.obtenerPerfil = exports.restablecerContrasena = exports.solicitarRecuperacionContrasena = exports.verificarContrasenaMaestra = exports.iniciarSesion = exports.registrarUsuario = void 0;
 const express_validator_1 = require("express-validator");
 const Usuario_1 = __importDefault(require("../modelos/Usuario"));
 const seguridad_1 = require("../utilidades/seguridad");
@@ -343,3 +343,137 @@ const cerrarSesion = async (req, res) => {
     }
 };
 exports.cerrarSesion = cerrarSesion;
+// Actualizar perfil del usuario
+const actualizarPerfil = async (req, res) => {
+    try {
+        const errores = (0, express_validator_1.validationResult)(req);
+        if (!errores.isEmpty()) {
+            res.status(400).json({
+                exito: false,
+                mensaje: 'Datos de entrada inválidos',
+                errores: errores.array()
+            });
+            return;
+        }
+        const usuarioId = req.usuario?.id;
+        const { nombre, email } = req.body;
+        if (!usuarioId) {
+            res.status(401).json({
+                exito: false,
+                mensaje: 'Usuario no autenticado'
+            });
+            return;
+        }
+        // Verificar si el nuevo email ya existe (si se está cambiando)
+        const usuario = await Usuario_1.default.findById(usuarioId);
+        if (!usuario) {
+            res.status(404).json({
+                exito: false,
+                mensaje: 'Usuario no encontrado'
+            });
+            return;
+        }
+        if (email && email.toLowerCase() !== usuario.email.toLowerCase()) {
+            const emailExistente = await Usuario_1.default.findOne({
+                email: email.toLowerCase(),
+                _id: { $ne: usuarioId }
+            });
+            if (emailExistente) {
+                res.status(400).json({
+                    exito: false,
+                    mensaje: 'Ya existe una cuenta con este email'
+                });
+                return;
+            }
+        }
+        // Actualizar el usuario
+        const usuarioActualizado = await Usuario_1.default.findByIdAndUpdate(usuarioId, {
+            ...(nombre && { nombre: nombre.trim() }),
+            ...(email && { email: email.toLowerCase().trim() })
+        }, { new: true, runValidators: true }).select('-contrasenaHash -contrasenaMaestra -tokenRecuperacion');
+        if (!usuarioActualizado) {
+            res.status(404).json({
+                exito: false,
+                mensaje: 'Usuario no encontrado'
+            });
+            return;
+        }
+        res.json({
+            exito: true,
+            mensaje: 'Perfil actualizado exitosamente',
+            datos: {
+                usuario: {
+                    id: usuarioActualizado._id,
+                    nombre: usuarioActualizado.nombre,
+                    email: usuarioActualizado.email,
+                    fechaCreacion: usuarioActualizado.fechaCreacion,
+                    fechaUltimoAcceso: usuarioActualizado.fechaUltimoAcceso,
+                    estaActivo: usuarioActualizado.estaActivo
+                }
+            }
+        });
+    }
+    catch (error) {
+        console.error('Error al actualizar perfil:', error);
+        res.status(500).json({
+            exito: false,
+            mensaje: 'Error interno del servidor'
+        });
+    }
+};
+exports.actualizarPerfil = actualizarPerfil;
+// Cambiar contraseña maestra
+const cambiarContrasenaMaestra = async (req, res) => {
+    try {
+        const errores = (0, express_validator_1.validationResult)(req);
+        if (!errores.isEmpty()) {
+            res.status(400).json({
+                exito: false,
+                mensaje: 'Datos de entrada inválidos',
+                errores: errores.array()
+            });
+            return;
+        }
+        const usuarioId = req.usuario?.id;
+        const { contrasenaActual, nuevaContrasena } = req.body;
+        if (!usuarioId) {
+            res.status(401).json({
+                exito: false,
+                mensaje: 'Usuario no autenticado'
+            });
+            return;
+        }
+        const usuario = await Usuario_1.default.findById(usuarioId);
+        if (!usuario) {
+            res.status(404).json({
+                exito: false,
+                mensaje: 'Usuario no encontrado'
+            });
+            return;
+        }
+        // Verificar la contraseña maestra actual
+        const contrasenaActualValida = await usuario.compararContrasenaMaestra(contrasenaActual);
+        if (!contrasenaActualValida) {
+            res.status(400).json({
+                exito: false,
+                mensaje: 'La contraseña maestra actual es incorrecta'
+            });
+            return;
+        }
+        // Actualizar la contraseña maestra
+        usuario.contrasenaMaestra = nuevaContrasena;
+        await usuario.save();
+        res.json({
+            exito: true,
+            mensaje: 'Contraseña maestra cambiada exitosamente'
+        });
+    }
+    catch (error) {
+        console.error('Error al cambiar contraseña maestra:', error);
+        res.status(500).json({
+            exito: false,
+            mensaje: 'Error interno del servidor'
+        });
+    }
+};
+exports.cambiarContrasenaMaestra = cambiarContrasenaMaestra;

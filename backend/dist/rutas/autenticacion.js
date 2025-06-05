@@ -79,4 +79,16 @@ router.get('/perfil', autenticacion_2.verificarAutenticacion, autenticacion_1.ob
  * @access  Privado
  */
 router.post('/cerrar-sesion', autenticacion_2.verificarAutenticacion, autenticacion_1.cerrarSesion);
+/**
+ * @route   PUT /api/auth/perfil
+ * @desc    Actualizar perfil del usuario
+ * @access  Privado
+ */
+router.put('/perfil', autenticacion_2.verificarAutenticacion, autenticacion_1.actualizarPerfil);
+/**
+ * @route   PUT /api/auth/cambiar-contrasena-maestra
+ * @desc    Cambiar contraseña maestra del usuario
+ * @access  Privado
+ */
+router.put('/cambiar-contrasena-maestra', autenticacion_2.verificarAutenticacion, validadores_1.validarCambiarContrasenaMaestra, validadores_1.manejarErroresValidacion, autenticacion_1.cambiarContrasenaMaestra);
 exports.default = router;

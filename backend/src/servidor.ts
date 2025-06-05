@@ -11,7 +11,7 @@ dotenv.config();
 
 // Crear aplicación Express
 const app = express();
-const PUERTO = process.env.PUERTO ?? 5000;
+const PUERTO = process.env.PORT ?? 5000;
 
 // Conectar a la base de datos
 conectarBaseDatos();

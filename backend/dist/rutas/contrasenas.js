@@ -19,6 +19,12 @@ router.use(autenticacion_1.verificarAutenticacion);
  */
 router.get('/', validadores_1.validarBusquedaContrasenas, contrasenas_1.obtenerContrasenas);
 /**
+ * @route   GET /api/contrasenas/categorias
+ * @desc    Obtener categorías con conteo de contraseñas
+ * @access  Privado
+ */
+router.get('/categorias', contrasenas_1.obtenerCategoriasConConteo);
+/**
  * @route   GET /api/contrasenas/estadisticas
  * @desc    Obtener estadísticas de contraseñas del usuario
  * @access  Privado

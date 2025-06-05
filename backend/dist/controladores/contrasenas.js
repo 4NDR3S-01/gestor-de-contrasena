@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.obtenerEstadisticas = exports.alternarFavorito = exports.eliminarContrasena = exports.actualizarContrasena = exports.crearContrasena = exports.obtenerContrasena = exports.obtenerContrasenas = void 0;
+exports.obtenerCategoriasConConteo = exports.obtenerEstadisticas = exports.alternarFavorito = exports.eliminarContrasena = exports.actualizarContrasena = exports.crearContrasena = exports.obtenerContrasena = exports.obtenerContrasenas = void 0;
 const express_validator_1 = require("express-validator");
 const Contrasena_1 = __importStar(require("../modelos/Contrasena"));
 const seguridad_1 = require("../utilidades/seguridad");
@@ -202,7 +202,7 @@ const crearContrasena = async (req, res) => {
             usuario: usuario ? usuario.trim() : undefined,
             email: email ? email.toLowerCase().trim() : undefined,
             contrasenaEncriptada,
-            notas: notas ? notas.trim() : undefined,
+            notas: typeof notas === 'string' ? notas : '',
             categoria: categoria ?? Contrasena_1.CategoriaContrasena.OTROS,
             esFavorito: esFavorito ?? false
         });
@@ -232,8 +232,13 @@ exports.crearContrasena = crearContrasena;
 // Actualizar contraseña existente
 const actualizarContrasena = async (req, res) => {
     try {
+        console.log('=== INICIO ACTUALIZACIÓN ===');
+        console.log('Body recibido:', req.body);
+        console.log('Usuario ID:', req.usuario?.id);
+        console.log('Parámetro ID:', req.params.id);
         const errores = (0, express_validator_1.validationResult)(req);
         if (!errores.isEmpty()) {
+            console.log('Errores de validación:', errores.array());
             res.status(400).json({
                 exito: false,
                 mensaje: 'Datos de entrada inválidos',
@@ -243,7 +248,6 @@ const actualizarContrasena = async (req, res) => {
         }
         const { id } = req.params;
         const usuarioId = req.usuario?.id;
-        const { titulo, url, usuario, email, contrasena, notas, categoria, esFavorito } = req.body;
         if (!usuarioId) {
             res.status(401).json({
                 exito: false,
@@ -251,78 +255,70 @@ const actualizarContrasena = async (req, res) => {
             });
             return;
         }
-        // Buscar la contraseña existente
-        const contrasenaExistente = await Contrasena_1.default.findOne({
-            _id: id,
-            usuarioId
-        });
-        if (!contrasenaExistente) {
+        const { titulo, url, usuario, email, contrasena, notas, categoria, esFavorito } = req.body;
+        // Construir objeto de actualización de manera más robusta
+        const datosActualizacion = {};
+        if (titulo !== undefined) {
+            datosActualizacion.titulo = titulo.trim();
+        }
+        if (url !== undefined) {
+            datosActualizacion.url = url ? url.trim() : undefined;
+        }
+        if (usuario !== undefined) {
+            datosActualizacion.usuario = usuario ? usuario.trim() : undefined;
+        }
+        if (email !== undefined) {
+            datosActualizacion.email = email ? email.toLowerCase().trim() : undefined;
+        }
+        if (notas !== undefined) {
+            datosActualizacion.notas = notas ? notas.trim() : '';
+        }
+        if (categoria !== undefined) {
+            datosActualizacion.categoria = categoria || Contrasena_1.CategoriaContrasena.OTROS;
+        }
+        if (esFavorito !== undefined) {
+            datosActualizacion.esFavorito = Boolean(esFavorito);
+        }
+        // Solo encriptar nueva contraseña si se proporciona
+        if (contrasena && contrasena.trim()) {
+            const contrasenaEncriptada = (0, seguridad_1.encriptarContrasena)(contrasena.trim());
+            datosActualizacion.contrasenaEncriptada = contrasenaEncriptada;
+        }
+        datosActualizacion.fechaModificacion = new Date();
+        console.log('Datos de actualización construidos:', datosActualizacion);
+        const contrasenaActualizada = await Contrasena_1.default.findOneAndUpdate({ _id: id, usuarioId }, datosActualizacion, { new: true });
+        if (!contrasenaActualizada) {
+            console.log('Contraseña no encontrada para actualizar');
             res.status(404).json({
                 exito: false,
                 mensaje: 'Contraseña no encontrada'
             });
             return;
         }
-        // Verificar si el nuevo título ya existe (excluyendo la actual)
-        if (titulo !== contrasenaExistente.titulo) {
-            const tituloExiste = await Contrasena_1.default.findOne({
-                usuarioId,
-                titulo: { $regex: new RegExp(`^${titulo}$`, 'i') },
-                _id: { $ne: id }
-            });
-            if (tituloExiste) {
-                res.status(400).json({
-                    exito: false,
-                    mensaje: 'Ya existe una contraseña con este título'
-                });
-                return;
-            }
-        }
-        // Preparar datos para actualizar
-        const datosActualizacion = {
-            titulo: titulo.trim(),
-            url: url?.trim(),
-            usuario: usuario?.trim(),
-            email: email?.toLowerCase()?.trim(),
-            categoria: categoria ?? contrasenaExistente.categoria,
-            esFavorito: esFavorito !== undefined ? esFavorito : contrasenaExistente.esFavorito
-        };
-        // Solo actualizar notas si el campo está presente en el body (permitiendo borrar con "")
-        if (Object.prototype.hasOwnProperty.call(req.body, 'notas')) {
-            datosActualizacion.notas = typeof notas === 'string' ? notas.trim() : '';
-        }
-        // Si se proporciona una nueva contraseña, encriptarla y guardar la anterior en el historial
-        if (contrasena) {
-            // Agregar contraseña actual al historial
-            contrasenaExistente.historialContrasenas = contrasenaExistente.historialContrasenas || [];
-            contrasenaExistente.historialContrasenas.push({
-                contrasenaEncriptada: contrasenaExistente.contrasenaEncriptada,
-                fechaCambio: new Date()
-            });
-            // Limitar historial a 10 contraseñas
-            if (contrasenaExistente.historialContrasenas.length > 10) {
-                contrasenaExistente.historialContrasenas = contrasenaExistente.historialContrasenas.slice(-10);
-            }
-            datosActualizacion.contrasenaEncriptada = (0, seguridad_1.encriptarContrasena)(contrasena);
-            datosActualizacion.historialContrasenas = contrasenaExistente.historialContrasenas;
-        }
-        // Actualizar contraseña
-        const contrasenaActualizada = await Contrasena_1.default.findByIdAndUpdate(id, datosActualizacion, { new: true, runValidators: true });
+        console.log('Contraseña actualizada exitosamente:', contrasenaActualizada._id);
         // Crear notificación
-        await notificaciones_1.default.crear(usuarioId, 'PASSWORD_UPDATED', { sitio: titulo });
+        await notificaciones_1.default.crear(usuarioId, 'PASSWORD_UPDATED', { sitio: contrasenaActualizada.titulo });
         res.json({
             exito: true,
             mensaje: 'Contraseña actualizada exitosamente',
             datos: {
                 contrasena: {
-                    ...contrasenaActualizada?.toJSON(),
-                    contrasenaEncriptada: undefined // No devolver la contraseña encriptada
+                    _id: contrasenaActualizada._id,
+                    titulo: contrasenaActualizada.titulo,
+                    url: contrasenaActualizada.url,
+                    usuario: contrasenaActualizada.usuario,
+                    email: contrasenaActualizada.email,
+                    categoria: contrasenaActualizada.categoria,
+                    esFavorito: contrasenaActualizada.esFavorito,
+                    notas: contrasenaActualizada.notas,
+                    fechaCreacion: contrasenaActualizada.fechaCreacion,
+                    fechaModificacion: contrasenaActualizada.fechaModificacion
                 }
             }
         });
     }
     catch (error) {
-        console.error('Error al actualizar contraseña:', error);
+        console.error('Error completo al actualizar contraseña:', error);
         res.status(500).json({
             exito: false,
             mensaje: 'Error interno del servidor'
@@ -461,3 +457,40 @@ const obtenerEstadisticas = async (req, res) => {
     }
 };
 exports.obtenerEstadisticas = obtenerEstadisticas;
+// Obtener categorías con conteo de contraseñas
+const obtenerCategoriasConConteo = async (req, res) => {
+    try {
+        const usuarioId = req.usuario?.id;
+        if (!usuarioId) {
+            res.status(401).json({
+                exito: false,
+                mensaje: 'Usuario no autenticado'
+            });
+            return;
+        }
+        // Obtener estadísticas por categoría
+        const estadisticasPorCategoria = await Contrasena_1.default.aggregate([
+            { $match: { usuarioId } },
+            { $group: { _id: '$categoria', cantidad: { $sum: 1 } } },
+            { $sort: { cantidad: -1 } }
+        ]);
+        // Convertir a formato de objeto con categorías como keys
+        const categoriasConConteo = {};
+        estadisticasPorCategoria.forEach(item => {
+            categoriasConConteo[item._id] = item.cantidad;
+        });
+        res.json({
+            exito: true,
+            mensaje: 'Categorías con conteo obtenidas exitosamente',
+            datos: categoriasConConteo
+        });
+    }
+    catch (error) {
+        console.error('Error al obtener categorías con conteo:', error);
+        res.status(500).json({
+            exito: false,
+            mensaje: 'Error interno del servidor'
+        });
+    }
+};
+exports.obtenerCategoriasConConteo = obtenerCategoriasConConteo;

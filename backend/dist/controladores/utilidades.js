@@ -4,11 +4,13 @@ exports.obtenerConfiguracionGenerador = exports.generarMultiplesContrasenas = ex
 const express_validator_1 = require("express-validator");
 const seguridad_1 = require("../utilidades/seguridad");
 const Contrasena_1 = require("../modelos/Contrasena");
-// Generar contraseña segura
+// Controlador para generar una contraseña segura basada en opciones recibidas en el cuerpo de la petición
 const generarContrasena = async (req, res) => {
     try {
+        // Validar los datos enviados en la petición
         const errores = (0, express_validator_1.validationResult)(req);
         if (!errores.isEmpty()) {
+            // Si hay errores, responder con estado 400 y detalle de errores
             res.status(400).json({
                 exito: false,
                 mensaje: 'Opciones de generación inválidas',
@@ -16,8 +18,9 @@ const generarContrasena = async (req, res) => {
             });
             return;
         }
+        // Extraer opciones con valores por defecto
         const { longitud = 12, incluirMayusculas = true, incluirMinusculas = true, incluirNumeros = true, incluirSimbolos = true, excluirCaracteresAmbiguos = true } = req.body;
-        // Validar opciones
+        // Validar longitud mínima y máxima permitida
         if (longitud < 4 || longitud > 128) {
             res.status(400).json({
                 exito: false,
@@ -25,6 +28,7 @@ const generarContrasena = async (req, res) => {
             });
             return;
         }
+        // Validar que al menos un tipo de carácter esté seleccionado
         if (!incluirMayusculas && !incluirMinusculas && !incluirNumeros && !incluirSimbolos) {
             res.status(400).json({
                 exito: false,
@@ -32,6 +36,7 @@ const generarContrasena = async (req, res) => {
             });
             return;
         }
+        // Crear objeto con opciones validadas
         const opciones = {
             longitud,
             incluirMayusculas,
@@ -40,10 +45,11 @@ const generarContrasena = async (req, res) => {
             incluirSimbolos,
             excluirCaracteresAmbiguos
         };
-        // Generar contraseña
+        // Generar la contraseña usando la función externa
         const contrasenaGenerada = (0, seguridad_1.generarContrasenaSagura)(opciones);
-        // Validar fortaleza de la contraseña generada
+        // Validar la fortaleza de la contraseña generada
         const fortaleza = (0, seguridad_1.validarFortalezaContrasena)(contrasenaGenerada);
+        // Responder con la contraseña y su fortaleza
         res.json({
             exito: true,
             mensaje: 'Contraseña generada exitosamente',
@@ -55,6 +61,7 @@ const generarContrasena = async (req, res) => {
         });
     }
     catch (error) {
+        // Manejo de errores inesperados
         console.error('Error al generar contraseña:', error);
         res.status(500).json({
             exito: false,
@@ -63,11 +70,13 @@ const generarContrasena = async (req, res) => {
     }
 };
 exports.generarContrasena = generarContrasena;
-// Validar fortaleza de contraseña
+// Controlador para validar la fortaleza de una contraseña recibida en la petición
 const validarContrasena = async (req, res) => {
     try {
+        // Validar datos de la petición
         const errores = (0, express_validator_1.validationResult)(req);
         if (!errores.isEmpty()) {
+            // Responder con error si la contraseña no es válida
             res.status(400).json({
                 exito: false,
                 mensaje: 'Contraseña inválida para validar',
@@ -76,6 +85,7 @@ const validarContrasena = async (req, res) => {
             return;
         }
         const { contrasena } = req.body;
+        // Validar que se haya proporcionado una contraseña de tipo string
         if (!contrasena || typeof contrasena !== 'string') {
             res.status(400).json({
                 exito: false,
@@ -83,7 +93,9 @@ const validarContrasena = async (req, res) => {
             });
             return;
         }
+        // Validar la fortaleza usando función externa
         const fortaleza = (0, seguridad_1.validarFortalezaContrasena)(contrasena);
+        // Responder con la fortaleza calculada
         res.json({
             exito: true,
             mensaje: 'Validación de fortaleza completada',
@@ -93,6 +105,7 @@ const validarContrasena = async (req, res) => {
         });
     }
     catch (error) {
+        // Manejo de errores inesperados
         console.error('Error al validar contraseña:', error);
         res.status(500).json({
             exito: false,
@@ -101,14 +114,16 @@ const validarContrasena = async (req, res) => {
     }
 };
 exports.validarContrasena = validarContrasena;
-// Obtener categorías disponibles
+// Controlador para obtener las categorías disponibles de contraseñas
 const obtenerCategorias = async (req, res) => {
     try {
+        // Mapear las categorías enumeradas para preparar la respuesta
         const categorias = Object.values(Contrasena_1.CategoriaContrasena).map(categoria => ({
             valor: categoria,
-            etiqueta: categoria.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-            icono: obtenerIconoCategoria(categoria)
+            etiqueta: categoria.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), // Formato legible
+            icono: obtenerIconoCategoria(categoria) // Obtener icono asociado
         }));
+        // Responder con la lista de categorías
         res.json({
             exito: true,
             mensaje: 'Categorías obtenidas exitosamente',
@@ -118,6 +133,7 @@ const obtenerCategorias = async (req, res) => {
         });
     }
     catch (error) {
+        // Manejo de errores inesperados
         console.error('Error al obtener categorías:', error);
         res.status(500).json({
             exito: false,
@@ -126,8 +142,9 @@ const obtenerCategorias = async (req, res) => {
     }
 };
 exports.obtenerCategorias = obtenerCategorias;
-// Función auxiliar para obtener iconos de categorías
+// Función auxiliar para obtener un icono según la categoría
 const obtenerIconoCategoria = (categoria) => {
+    // Mapeo de categoría a icono emoji
     const iconos = {
         [Contrasena_1.CategoriaContrasena.TRABAJO]: '💼',
         [Contrasena_1.CategoriaContrasena.PERSONAL]: '👤',
@@ -137,13 +154,16 @@ const obtenerIconoCategoria = (categoria) => {
         [Contrasena_1.CategoriaContrasena.ENTRETENIMIENTO]: '🎮',
         [Contrasena_1.CategoriaContrasena.OTROS]: '📁'
     };
+    // Devolver icono o uno genérico si no existe
     return iconos[categoria] || '📁';
 };
-// Generar múltiples contraseñas
+// Controlador para generar múltiples contraseñas con las opciones indicadas
 const generarMultiplesContrasenas = async (req, res) => {
     try {
+        // Validar datos recibidos
         const errores = (0, express_validator_1.validationResult)(req);
         if (!errores.isEmpty()) {
+            // Responder con errores si no es válido
             res.status(400).json({
                 exito: false,
                 mensaje: 'Opciones de generación inválidas',
@@ -151,8 +171,9 @@ const generarMultiplesContrasenas = async (req, res) => {
             });
             return;
         }
+        // Extraer opciones con valores por defecto
         const { cantidad = 5, longitud = 12, incluirMayusculas = true, incluirMinusculas = true, incluirNumeros = true, incluirSimbolos = true, excluirCaracteresAmbiguos = true } = req.body;
-        // Validar cantidad
+        // Validar cantidad de contraseñas solicitadas
         if (cantidad < 1 || cantidad > 20) {
             res.status(400).json({
                 exito: false,
@@ -168,6 +189,7 @@ const generarMultiplesContrasenas = async (req, res) => {
             });
             return;
         }
+        // Validar al menos un tipo de caracter
         if (!incluirMayusculas && !incluirMinusculas && !incluirNumeros && !incluirSimbolos) {
             res.status(400).json({
                 exito: false,
@@ -175,6 +197,7 @@ const generarMultiplesContrasenas = async (req, res) => {
             });
             return;
         }
+        // Crear opciones para el generador
         const opciones = {
             longitud,
             incluirMayusculas,
@@ -183,7 +206,7 @@ const generarMultiplesContrasenas = async (req, res) => {
             incluirSimbolos,
             excluirCaracteresAmbiguos
         };
-        // Generar múltiples contraseñas
+        // Generar las contraseñas solicitadas y evaluar su fortaleza
         const contrasenas = [];
         for (let i = 0; i < cantidad; i++) {
             const contrasenaGenerada = (0, seguridad_1.generarContrasenaSagura)(opciones);
@@ -195,8 +218,9 @@ const generarMultiplesContrasenas = async (req, res) => {
                 esSegura: fortaleza.esSegura
             });
         }
-        // Ordenar por fortaleza (más seguras primero)
+        // Ordenar las contraseñas de mayor a menor fortaleza
         contrasenas.sort((a, b) => b.fortaleza - a.fortaleza);
+        // Responder con la lista generada
         res.json({
             exito: true,
             mensaje: `${cantidad} contraseñas generadas exitosamente`,
@@ -207,6 +231,7 @@ const generarMultiplesContrasenas = async (req, res) => {
         });
     }
     catch (error) {
+        // Manejo de errores inesperados
         console.error('Error al generar múltiples contraseñas:', error);
         res.status(500).json({
             exito: false,
@@ -215,9 +240,10 @@ const generarMultiplesContrasenas = async (req, res) => {
     }
 };
 exports.generarMultiplesContrasenas = generarMultiplesContrasenas;
-// Obtener configuración predeterminada para el generador
+// Controlador para obtener la configuración predeterminada y presets para el generador de contraseñas
 const obtenerConfiguracionGenerador = async (req, res) => {
     try {
+        // Configuración básica por defecto
         const configuracionPredeterminada = {
             longitud: 12,
             incluirMayusculas: true,
@@ -226,6 +252,7 @@ const obtenerConfiguracionGenerador = async (req, res) => {
             incluirSimbolos: true,
             excluirCaracteresAmbiguos: true
         };
+        // Presets predefinidos para distintas necesidades
         const presets = [
             {
                 nombre: 'Básica',
@@ -276,6 +303,7 @@ const obtenerConfiguracionGenerador = async (req, res) => {
                 }
             }
         ];
+        // Responder con la configuración y presets
         res.json({
             exito: true,
             mensaje: 'Configuración del generador obtenida exitosamente',
@@ -286,6 +314,7 @@ const obtenerConfiguracionGenerador = async (req, res) => {
         });
     }
     catch (error) {
+        // Manejo de errores inesperados
         console.error('Error al obtener configuración del generador:', error);
         res.status(500).json({
             exito: false,
