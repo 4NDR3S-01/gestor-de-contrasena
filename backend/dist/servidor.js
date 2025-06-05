@@ -16,7 +16,7 @@ dotenv_1.default.config();
 // Crear aplicación Express
 const app = (0, express_1.default)();
 app.set('trust proxy', 1);
-const PUERTO = process.env.PORT ?? 5000;
+const PUERTO = process.env.PORT ?? 8080;
 // Conectar a la base de datos
 (0, baseDatos_1.conectarBaseDatos)();
 // Configuración de seguridad
