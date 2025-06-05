@@ -636,9 +636,9 @@ const Profile: React.FC = () => {
                   <p className="text-gray-600 dark:text-gray-400 text-center text-sm max-w-xs">Escanea el código QR para abrir la app en tu móvil o descarga la app oficial para Android.</p>
                 </div>
                 <div className="flex flex-col items-center gap-4 w-full">
-                  <QRCodeCanvas value={window.location.origin + '/mi-app.apk'} size={120} className="border-2 border-green-200 dark:border-green-700 rounded-xl bg-white dark:bg-gray-900 p-2 shadow" />
+                  <QRCodeCanvas value={window.location.origin + '/boveda-virtual.apk'} size={120} className="border-2 border-green-200 dark:border-green-700 rounded-xl bg-white dark:bg-gray-900 p-2 shadow" />
                   <a
-                    href="/mi-app.apk"
+                    href="/boveda-virtual.apk"
                     download
                     className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 shadow-lg mb-1 mt-2 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
                   >
