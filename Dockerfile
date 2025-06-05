@@ -49,4 +49,4 @@ COPY --from=build-backend /app/backend .
 EXPOSE 8080
 
 # Comando para iniciar la app (ajusta si tu entrypoint es diferente)
-CMD ["node", "dist/src/servidor.js"]
+CMD ["node", "dist/servidor.js"]
